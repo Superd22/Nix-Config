@@ -17,4 +17,6 @@ _:
   # Browsers
   "sigmaos"
 
+  "httpie-desktop"
+
 ]

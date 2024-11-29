@@ -278,10 +278,10 @@ let name = "David";
         identitiesOnly = true;
         identityFile = [
           (lib.mkIf pkgs.stdenv.hostPlatform.isLinux
-            "/home/${user}/.ssh/id_github"
+            "/home/${user}/.ssh/id_rsa"
           )
           (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
-            "/Users/${user}/.ssh/id_github"
+            "/Users/${user}/.ssh/id_rsa"
           )
         ];
       };

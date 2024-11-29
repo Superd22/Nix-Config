@@ -58,4 +58,6 @@ with pkgs; [
 
   nixd
   github-cli
+
+  google-cloud-sdk
 ]
