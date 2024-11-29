@@ -63,10 +63,10 @@ let user = "david"; in
       };
 
       dock = {
-        autohide = false;
+        autohide = true;
         show-recents = false;
-        launchanim = true;
-        orientation = "bottom";
+        launchanim = false;
+        orientation = "left";
         tilesize = 48;
       };
 
@@ -76,7 +76,7 @@ let user = "david"; in
 
       trackpad = {
         Clicking = true;
-        TrackpadThreeFingerDrag = true;
+        TrackpadThreeFingerDrag = false;
       };
     };
   };

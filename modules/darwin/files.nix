@@ -1,5 +1,8 @@
 { user, config, pkgs, ... }:
 
+# Handles copying files (especially dotfiles)
+# Through home-manager
+
 let
   xdg_home = "${config.users.users.${user}.home}";
   xdg_configHome = "${config.users.users.${user}.home}/.config";
@@ -8,7 +11,6 @@ let
 
   in
 {
-
   # todo figureout how to symlink instead of copy
   "${xdg_home}/.aerospace.toml" = {
     source = ./dotfiles/.aerospace.toml;
