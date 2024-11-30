@@ -371,4 +371,5 @@ let name = "David";
       bind-key -T copy-mode-vi 'C-\' select-pane -l
       '';
     };
+
 }

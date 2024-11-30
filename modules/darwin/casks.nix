@@ -17,6 +17,7 @@ _:
   # Browsers
   "sigmaos"
 
-  "httpie-desktop"
+  "httpie"
 
+  "zerotier-one"
 ]
