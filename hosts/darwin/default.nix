@@ -7,6 +7,7 @@ let user = "david"; in
   imports = [
     ../../modules/darwin/secrets.nix
     ../../modules/darwin/home-manager.nix
+    ../../modules/darwin/services
     ../../modules/shared
      agenix.darwinModules.default
   ];

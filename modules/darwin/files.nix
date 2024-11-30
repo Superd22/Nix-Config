@@ -11,9 +11,5 @@ let
 
   in
 {
-  # todo figureout how to symlink instead of copy
-  "${xdg_home}/.aerospace.toml" = {
-    source = ./dotfiles/.aerospace.toml;
-  };
 
 }
