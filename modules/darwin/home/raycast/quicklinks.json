@@ -1,0 +1,18 @@
+[
+  {
+    "openWith": "Visual Studio Code",
+    "name": "wmtn dbt code",
+    "iconName": "brand-vscode-16",
+    "link": "\/Users\/david\/wmtn\/dbt"
+  },
+  {
+    "name": "wmtn backend zed",
+    "link": "\/Users\/david\/wmtn\/backend",
+    "openWith": "Zed"
+  },
+  {
+    "name": "perso nix-config zed",
+    "link": "\/Users\/david\/.config\/nixos-config",
+    "openWith": "Zed"
+  }
+]
