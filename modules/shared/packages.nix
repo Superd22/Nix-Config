@@ -32,6 +32,7 @@ with pkgs; [
   noto-fonts
   noto-fonts-emoji
   meslo-lgs-nf
+  jellyfin-media-player
 
   # Text and terminal utilities
   htop
