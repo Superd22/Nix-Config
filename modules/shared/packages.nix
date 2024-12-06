@@ -58,6 +58,7 @@ with pkgs; [
 
   nixd
   github-cli
+  awscli2
 
   google-cloud-sdk
 ]

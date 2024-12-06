@@ -7,3 +7,9 @@ Nix & dotfiles for personal & work laptop
 **hosts** for darwin & nixos targets.
 **modules** used by both hosts, with shared.
 **overlays** if required
+
+
+# todo
+- [ ] id_rsa auto
+- [ ] auto zerotier
+- [ ] auto pritnul

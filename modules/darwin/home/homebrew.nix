@@ -28,6 +28,7 @@ _:
 
       # Networking
       "zerotier-one"
+      "pritunl"
     ];
   };
 }
