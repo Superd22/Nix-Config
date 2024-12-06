@@ -17,9 +17,11 @@ _:
       # Entertainment Tools
       "vlc"
       "spotify"
+      "jellyfin-media-player"
 
       # Terminal
       "warp"
+      "sf"
 
       # Browsers
       "sigmaos"
