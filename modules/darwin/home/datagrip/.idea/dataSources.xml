@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="[STAGING] PG" uuid="6027fe50-b284-4c86-a021-a9da4e5ec6b2">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://wemaintain-pgsql-staging.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com:5432/postgres</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="AWS.RegionId" value="eu-west-1" />
+        <property name="AWS.CredentialId" value="profile:prod:sudo" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="[PROD] PG" uuid="809a15f7-82da-4cda-8ae9-717dc97f65f9">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://wemaintain-pgsql-prod.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com:5432/postgres</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="AWS.RegionId" value="eu-west-1" />
+        <property name="AWS.CredentialId" value="profile:prod:sudo" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="DANGER WRITE PG PROD" uuid="b3b54dfb-e7c6-469a-b571-b74cde86bfab">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://wemaintain-pgsql-prod.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com:5432/postgres</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="AWS.RegionId" value="eu-west-1" />
+        <property name="AWS.CredentialId" value="profile:prod:sudo" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="postgres@localhost" uuid="086f2b95-6817-4318-9467-7eca99a90267">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>

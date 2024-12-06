@@ -13,3 +13,4 @@ Nix & dotfiles for personal & work laptop
 - [ ] id_rsa auto
 - [ ] auto zerotier
 - [ ] auto pritnul
+- [ ] auto aws config

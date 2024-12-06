@@ -10,6 +10,7 @@ _:
       "homebrew/cask/docker"
       "visual-studio-code"
       "httpie"
+      "datagrip"
 
       # Communication Tools
       "discord"
