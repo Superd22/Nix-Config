@@ -19,6 +19,7 @@ _:
       "vlc"
       "spotify"
       "jellyfin-media-player"
+      "steam"
 
       # Terminal
       "warp"
@@ -30,6 +31,10 @@ _:
       # Networking
       "zerotier-one"
       "pritunl"
+
+      # 3D
+      "autodesk-fusion"
+      "orcaslicer"
     ];
   };
 }
