@@ -14,5 +14,10 @@
     "name": "perso nix-config zed",
     "link": "\/Users\/david\/.config\/nixos-config",
     "openWith": "Zed"
+  },
+  {
+    "name": "perso home-api zed",
+    "link": "\/Users\/david\/perso\/home-api",
+    "openWith": "Zed"
   }
 ]
