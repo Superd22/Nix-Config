@@ -4,6 +4,7 @@ _:
     enable = true;
     brews = [
       "nvm"
+      "git-secret"
     ];
     casks = [
       # Development Tools
@@ -35,6 +36,8 @@ _:
       # 3D
       "autodesk-fusion"
       "orcaslicer"
+
+      "parsec"
     ];
   };
 }

@@ -59,6 +59,8 @@ with pkgs; [
   nixd
   github-cli
   awscli2
+  terraform
+  deno
 
   google-cloud-sdk
 ]
