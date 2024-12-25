@@ -60,7 +60,6 @@ with pkgs; [
   github-cli
   awscli2
   terraform
-  deno
 
   google-cloud-sdk
 ]

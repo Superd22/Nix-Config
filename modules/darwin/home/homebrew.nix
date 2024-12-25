@@ -5,6 +5,7 @@ _:
     brews = [
       "nvm"
       "git-secret"
+      "deno"
     ];
     casks = [
       # Development Tools
