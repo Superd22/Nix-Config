@@ -13,6 +13,7 @@ _:
       "visual-studio-code"
       "httpie"
       "datagrip"
+      "openlens"
 
       # Communication Tools
       "discord"
@@ -39,6 +40,7 @@ _:
       "orcaslicer"
 
       "parsec"
+      "nordvpn"
     ];
   };
 }

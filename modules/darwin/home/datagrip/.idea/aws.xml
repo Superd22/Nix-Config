@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="accountSettings">
-    <option name="activeProfile" value="profile:prod:admin" />
+    <option name="activeProfile" value="profile:prod:sudo" />
     <option name="activeRegion" value="eu-west-1" />
     <option name="recentlyUsedProfiles">
       <list>
-        <option value="profile:prod:admin" />
         <option value="profile:prod:sudo" />
+        <option value="profile:prod:admin" />
       </list>
     </option>
     <option name="recentlyUsedRegions">

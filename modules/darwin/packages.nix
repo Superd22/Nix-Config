@@ -8,4 +8,6 @@ shared-packages ++ [
   raycast
   # macos i3
   aerospace
+  xcodes
+  ruby
 ]
