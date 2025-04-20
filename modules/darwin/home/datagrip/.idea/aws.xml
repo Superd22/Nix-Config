@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="accountSettings">
-    <option name="activeProfile" value="profile:prod:sudo" />
+    <option name="activeProfile" value="profile:prod:admin" />
     <option name="activeRegion" value="eu-west-1" />
     <option name="recentlyUsedProfiles">
       <list>
-        <option value="profile:prod:sudo" />
         <option value="profile:prod:admin" />
+        <option value="profile:prod:sudo" />
       </list>
     </option>
     <option name="recentlyUsedRegions">
@@ -15,5 +15,8 @@
         <option value="us-east-1" />
       </list>
     </option>
+  </component>
+  <component name="explorerToolWindow">
+    <option name="selectedTab" value="Explorer" />
   </component>
 </project>

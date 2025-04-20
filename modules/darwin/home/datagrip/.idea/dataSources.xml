@@ -41,5 +41,19 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="@wemaintain-pgsql-prod.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com" uuid="f9a6f62d-f9ee-47d2-a8eb-8a52422b6542">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <imported>true</imported>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://wemaintain-pgsql-prod.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com:5432/</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="AWS.RdsSigningPort" value="5432" />
+        <property name="AWS.RegionId" value="eu-west-1" />
+        <property name="AWS.CredentialId" value="profile:prod:sudo" />
+        <property name="AWS.RdsSigningHost" value="wemaintain-pgsql-prod.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
