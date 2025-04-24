@@ -320,11 +320,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1732813753,
-        "narHash": "sha256-ieeH+jx8V83fqZvreQ0BCijm31IAUY20QwVHkaPGjrQ=",
+        "lastModified": 1745510823,
+        "narHash": "sha256-cWFssJQ9QNNBYlzYipOtekzqipJ2JPr+AFdr+xWV9vk=",
         "ref": "main",
-        "rev": "39e89b548d122a7a294bfea13cd468a2878f9f0b",
-        "revCount": 1,
+        "rev": "0f16404467da642b019ce6b382845de02a030297",
+        "revCount": 2,
         "type": "git",
         "url": "ssh://git@github.com/superd22/nix-secrets"
       },

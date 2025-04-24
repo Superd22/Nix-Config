@@ -12,6 +12,7 @@ shared-packages ++ [
   appimage-run
   gnumake
   cmake
+  rustc
   home-manager
 
   # Media and design tools
