@@ -14,6 +14,7 @@ _:
       "httpie"
       "datagrip"
       "openlens"
+      "deskflow"
 
       # Communication Tools
       "discord"

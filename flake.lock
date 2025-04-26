@@ -81,6 +81,22 @@
         "type": "github"
       }
     },
+    "deskflowHomebrewTap": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1745599574,
+        "narHash": "sha256-Krwmatd0dX19ibnnEgWsHMzBCycprHFOnMk/OuVI4h4=",
+        "owner": "deskflow",
+        "repo": "homebrew-tap",
+        "rev": "0165de8e7f46c7d36bf3379a6ca41b17ea171160",
+        "type": "github"
+      },
+      "original": {
+        "owner": "deskflow",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -307,6 +323,7 @@
       "inputs": {
         "agenix": "agenix",
         "darwin": "darwin_2",
+        "deskflowHomebrewTap": "deskflowHomebrewTap",
         "disko": "disko",
         "home-manager": "home-manager_2",
         "homebrew-bundle": "homebrew-bundle",
