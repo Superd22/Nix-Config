@@ -54,7 +54,7 @@ with pkgs; [
   pkgs.zed-editor
 
   # Communications
-  signal-desktop
+  # signal-desktop
 
   nixd
   github-cli

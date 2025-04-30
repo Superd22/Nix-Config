@@ -15,6 +15,7 @@ _:
       "datagrip"
       "openlens"
       "deskflow"
+      "signal"
 
       # Communication Tools
       "discord"
