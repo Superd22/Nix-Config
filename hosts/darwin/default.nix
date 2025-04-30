@@ -14,24 +14,25 @@ let user = "david"; in
 
   # Setup user, packages, programs
   ids.gids.nixbld = 350;
-  nix = {
-    package = pkgs.nix;
-    settings = {
-      trusted-users = [ "@admin" "${user}" ];
-      substituters = [ "https://nix-community.cachix.org" "https://cache.nixos.org" ];
-      trusted-public-keys = [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" ];
-    };
+  nix.enable = false; # Managed by determinate
+  # nix = {
+  #   package = pkgs.nix;
+  #   settings = {
+  #     trusted-users = [ "@admin" "${user}" ];
+  #     substituters = [ "https://nix-community.cachix.org" "https://cache.nixos.org" ];
+  #     trusted-public-keys = [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" ];
+  #   };
 
-    gc = {
-      automatic = true;
-      interval = { Weekday = 0; Hour = 2; Minute = 0; };
-      options = "--delete-older-than 30d";
-    };
+  #   gc = {
+  #     automatic = true;
+  #     interval = { Weekday = 0; Hour = 2; Minute = 0; };
+  #     options = "--delete-older-than 30d";
+  #   };
 
-    extraOptions = ''
-      experimental-features = nix-command flakes
-    '';
-  };
+  #   extraOptions = ''
+  #     experimental-features = nix-command flakes
+  #   '';
+  # };
 
   # Turn off NIX_PATH warnings now that we're using flakes
   system.checks.verifyNixPath = false;
