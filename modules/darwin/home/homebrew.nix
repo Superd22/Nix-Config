@@ -16,7 +16,7 @@ _:
       "openlens"
       "deskflow"
       "signal"
-
+      "betterdisplay"
       # Communication Tools
       "discord"
 
