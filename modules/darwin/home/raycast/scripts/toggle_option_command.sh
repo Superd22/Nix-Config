@@ -7,8 +7,8 @@
 # @raycast.mode fullOutput
 #
 # Optional parameters:
-# @raycast.icon 🤖
-# @raycast.packageName Raycast Scripts
+# @raycast.icon ⌨️
+# @raycast.packageName KVM
 
 
 # Script to toggle between normal and swapped states for Option and Command keys

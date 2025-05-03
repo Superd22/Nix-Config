@@ -18,6 +18,18 @@ if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed
      # Right monitor PiP setup
      betterdisplaycli set -name="Right" -pip -targetName="Odyssey G93SC" -originX=50% -originY=0% -width=50% -height=100% -priority=absolute -showTitlebar=off -showShadow=off -unmovable=on -clickthrough=on
 
+     # Put everything in odyssey but the pip windows on the left
+     /Users/david/.nix-profile/bin/aerospace list-workspaces --all --format "%{workspace} %{monitor-name}" --json | jq -r '.[] | select(.["monitor-name"] != "Left" and .["monitor-name"] != "Right") | .["workspace"]' | while read -r id; do
+         /Users/david/.nix-profile/bin/aerospace move-workspace-to-monitor --workspace "$id" "Left"
+     done
+    #  aerospace move-workspace-to-monitor --workspace "1" --monitor "Left"
+# /Users/david/.nix-profile/bin/aerospace list-windows --all --json --format "%{window-id}%{monitor-name}" | jq -r '.[] | select(.["monitor-name"] != "Left" and .["monitor-name"] != "Right") | .["window-id"]' | while read -r id; do
+#     /Users/david/.nix-profile/bin/aerospace move-node-to-monitor --window-id "$id" "Left"
+# done
+
+
+
+
 else
     echo "Odyssey G93SC not connected. Disabling all PiP windows..."
     betterdisplaycli set -name=Left -pip=off
