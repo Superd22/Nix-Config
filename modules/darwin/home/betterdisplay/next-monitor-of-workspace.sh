@@ -7,7 +7,8 @@ result=$(/Users/david/.nix-profile/bin/aerospace list-workspaces --all --json  -
   map(select(.workspace == $ws)) | .[0]."monitor-name" as $mon |
   if $mon == "Left" then "Right"
   elif $mon == "Right" then "Left"
-  else $mon
+  elif $mon == "Odyssey G93SC" then "Left"
+else $mon
   end')
 
 if [ ! -z "$result" ]; then
