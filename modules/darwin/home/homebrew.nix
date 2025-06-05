@@ -6,6 +6,7 @@ _:
       "nvm"
       "git-secret"
       "deno"
+      "openfga"
     ];
     casks = [
       # Development Tools

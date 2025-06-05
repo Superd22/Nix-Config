@@ -27,6 +27,10 @@
       url = "github:deskflow/homebrew-tap";
       flake = false;
     };
+    openfgaTap = {
+      url = "github:openfga/homebrew-tap";
+      flake = false;
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,7 +40,7 @@
       flake = false;
     };
   };
-  outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, home-manager, nixpkgs, disko, agenix, secrets } @inputs:
+  outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, openfgaTap, home-manager, nixpkgs, disko, agenix, secrets } @inputs:
     let
       user = "david";
       linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
@@ -98,6 +102,7 @@
                   "homebrew/homebrew-cask" = homebrew-cask;
                   "homebrew/homebrew-bundle" = homebrew-bundle;
                   "deskflow/homebrew-deskflow" = deskflowHomebrewTap;
+                  "openfga/homebrew-openfga" = openfgaTap;
                 };
                 mutableTaps = false;
                 autoMigrate = true;

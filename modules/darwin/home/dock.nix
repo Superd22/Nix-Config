@@ -53,7 +53,7 @@ in
             cfg.entries;
         in
         {
-          system.activationScripts.postUserActivation.text = ''
+          system.activationScripts.DockScript.text = ''
             echo >&2 "Setting up the Dock..."
             defaults write com.apple.dock tilesize -float 64 && killall Dock
             defaults write com.apple.dock autohide -bool false && killall Dock
@@ -72,7 +72,7 @@ in
         }
       ))
       (mkIf (!cfg.enable) {
-        system.activationScripts.postUserActivation.text = ''
+        system.activationScripts.DockScriptRemove.text = ''
             echo >&2 "Removing the dock..."
             defaults write com.apple.dock orientation -string "left"
             defaults write com.apple.dock autohide -bool true
