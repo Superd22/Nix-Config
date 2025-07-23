@@ -6,7 +6,8 @@ _:
       "nvm"
       "git-secret"
       "deno"
-      "openfga"
+      "fga"
+      "scrcpy"
     ];
     casks = [
       # Development Tools
@@ -26,6 +27,7 @@ _:
       "spotify"
       "jellyfin-media-player"
       "steam"
+      "obs"
 
       # Terminal
       "warp"
