@@ -46,6 +46,8 @@ _:
 
       "parsec"
       "nordvpn"
+
+      "camo-studio"
     ];
   };
 }

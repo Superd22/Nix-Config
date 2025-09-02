@@ -233,3 +233,8 @@ BD = ['Odyssey']
 # [[on-window-detected]]
 #     if.app-id = 'pro.betterdisplay.BetterDisplay'
 #     run = 'move-node-to-workspace BD'
+
+# Treat iOS Simulator as tiled (non-popup) windows
+[[on-window-detected]]
+    if.app-id = 'com.apple.iphonesimulator'
+    run = 'layout tiling'
