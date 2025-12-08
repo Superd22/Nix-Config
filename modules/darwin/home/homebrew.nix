@@ -8,6 +8,7 @@ _:
       "deno"
       "fga"
       "scrcpy"
+      "rust"
     ];
     casks = [
       # Development Tools

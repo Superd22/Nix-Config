@@ -76,12 +76,14 @@ let name = "David";
   git = {
     enable = true;
     ignores = [ "*.swp" ];
-    userName = name;
-    userEmail = email;
     lfs = {
       enable = true;
     };
-    extraConfig = {
+    settings = {
+      user = {
+        name = name;
+        email = email;
+      };
       init.defaultBranch = "main";
       core = {
 	    editor = "vim";
@@ -270,6 +272,7 @@ let name = "David";
 
   ssh = {
     enable = true;
+    enableDefaultConfig = false;
     includes = [
       (lib.mkIf pkgs.stdenv.hostPlatform.isLinux
         "/home/${user}/.ssh/config_external"
@@ -279,6 +282,11 @@ let name = "David";
       )
     ];
     matchBlocks = {
+      "*" = {
+        extraOptions = {
+          AddKeysToAgent = "yes";
+        };
+      };
       "github.com" = {
         identitiesOnly = true;
         identityFile = [
