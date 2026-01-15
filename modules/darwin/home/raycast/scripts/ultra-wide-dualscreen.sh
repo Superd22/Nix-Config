@@ -21,7 +21,7 @@ fi
 displays=$(betterdisplaycli get -identifiers)
 
 # Check if Odyssey G93SC is connected
-if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed 's/^/[/' | sed 's/$/]/' | jq 'map(select(.name == "Odyssey G93SC")) | length > 0'; then
+if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed 's/^/[/' | sed 's/$/]/' | jq -e 'map(select(.name == "Odyssey G93SC")) | length > 0' > /dev/null; then
     echo "Odyssey G93SC is connected. Setting up full-size PiP windows..."
 
     # Make sure Left is the main screen
