@@ -12,7 +12,6 @@ let
 in
 shared-packages ++ [
   dockutil
-  raycast
   aerospace
   xcodes
   ruby_3_2_0

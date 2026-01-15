@@ -33,6 +33,7 @@ _:
       # Terminal
       "warp"
       "sf"
+      "raycast"
 
       # Browsers
       "sigmaos"
