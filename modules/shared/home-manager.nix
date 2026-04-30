@@ -21,7 +21,7 @@ let name = "David";
           file = "p10k.zsh";
       }
     ];
-    initExtraFirst = ''
+    initContent = lib.mkBefore ''
       if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
@@ -108,6 +108,7 @@ let name = "David";
   git = {
     enable = true;
     ignores = [ "*.swp" ];
+    signing.format = "openpgp";
     lfs = {
       enable = true;
     };
