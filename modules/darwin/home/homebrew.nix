@@ -30,6 +30,9 @@ _:
       "steam"
       "obs"
 
+      # Editors
+      "zed"
+
       # Terminal
       "warp"
       "sf"

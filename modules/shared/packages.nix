@@ -50,9 +50,6 @@ with pkgs; [
   python3
   virtualenv
 
-  # Editors
-  pkgs.zed-editor
-
   # Communications
   # signal-desktop
 

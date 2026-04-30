@@ -50,19 +50,9 @@ if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed
 #     /Users/david/.nix-profile/bin/aerospace move-node-to-monitor --window-id "$id" "Left"
 # done
 
-     # Move windows from workspaces > 10 to workspace 1
-     echo "Checking for windows in workspaces > 10..."
-     /Users/david/.nix-profile/bin/aerospace list-workspaces --all --json | jq -r '.[] | select(.workspace | tonumber? != null and tonumber > 10) | .workspace' | while read -r workspace; do
-         echo "Found workspace: $workspace"
-         /Users/david/.nix-profile/bin/aerospace list-windows --workspace "$workspace" --json | jq -r '.[]["window-id"]' | while read -r window_id; do
-             echo "  Moving window $window_id from workspace $workspace to workspace 1"
-             /Users/david/.nix-profile/bin/aerospace move-node-to-workspace --window-id "$window_id" 1
-         done
-     done
-
      # Move non-BetterDisplay windows from workspace BD to workspace 1
      echo "Checking for non-BetterDisplay windows in workspace BD..."
-     /Users/david/.nix-profile/bin/aerospace list-windows --workspace BD --json 2>/dev/null | jq -r '.[] | select(.["app-bundle-id"] != "pro.betterdisplay.BetterDisplay") | .["window-id"]' | while read -r window_id; do
+     /Users/david/.nix-profile/bin/aerospace list-windows --workspace BD --json 2>/dev/null | jq -r '.[] | select(.["app-name"] != "BetterDisplay") | .["window-id"]' | while read -r window_id; do
          echo "  Moving non-BetterDisplay window $window_id from workspace BD to workspace 1"
          /Users/david/.nix-profile/bin/aerospace move-node-to-workspace --window-id "$window_id" 1
      done
@@ -82,6 +72,40 @@ if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed
      else
          echo "No saved window positions found."
      fi
+
+     # Move windows from workspaces > 10 to workspace 1
+     echo "Checking for windows in workspaces > 10..."
+     /Users/david/.nix-profile/bin/aerospace list-workspaces --all --json | jq -r '.[] | select(.workspace | tonumber? != null and tonumber > 10) | .workspace' | while read -r workspace; do
+         echo "Found workspace: $workspace"
+         /Users/david/.nix-profile/bin/aerospace list-windows --workspace "$workspace" --json | jq -r '.[]["window-id"]' | while read -r window_id; do
+             echo "  Moving window $window_id from workspace $workspace to workspace 1"
+             /Users/david/.nix-profile/bin/aerospace move-node-to-workspace --window-id "$window_id" 1
+         done
+     done
+
+     # Ensure Left and Right monitors are on workspaces <= 10
+     echo "Checking monitor workspace assignments..."
+     left_workspace=$(/Users/david/.nix-profile/bin/aerospace list-workspaces --monitor "Left" --json 2>/dev/null | jq -r '.[0].workspace // empty')
+     right_workspace=$(/Users/david/.nix-profile/bin/aerospace list-workspaces --monitor "Right" --json 2>/dev/null | jq -r '.[0].workspace // empty')
+     
+     if [ -n "$left_workspace" ] && [ "$left_workspace" -gt 10 ] 2>/dev/null; then
+         echo "Left monitor is on workspace $left_workspace (> 10), moving workspace 1 to Left monitor..."
+         /Users/david/.nix-profile/bin/aerospace move-workspace-to-monitor --workspace 1 "Left"
+     else
+         echo "Left monitor is on workspace $left_workspace (OK)"
+     fi
+     
+     if [ -n "$right_workspace" ] && [ "$right_workspace" -gt 10 ] 2>/dev/null; then
+         echo "Right monitor is on workspace $right_workspace (> 10), moving workspace 2 to Right monitor..."
+         /Users/david/.nix-profile/bin/aerospace move-workspace-to-monitor --workspace 2 "Right"
+     else
+         echo "Right monitor is on workspace $right_workspace (OK)"
+     fi
+     
+     # Also ensure both workspaces 1 and 2 are on the correct monitors
+     echo "Ensuring workspace 1 is on Left and workspace 2 is on Right..."
+     /Users/david/.nix-profile/bin/aerospace move-workspace-to-monitor --workspace 1 "Left" 2>/dev/null || true
+     /Users/david/.nix-profile/bin/aerospace move-workspace-to-monitor --workspace 2 "Right" 2>/dev/null || true
 
 
 
