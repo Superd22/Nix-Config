@@ -22,6 +22,11 @@ let name = "David";
       }
     ];
     initContent = lib.mkBefore ''
+      # Enable Powerlevel10k instant prompt. Must stay at the top of .zshrc.
+      if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+        source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+      fi
+
       if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
@@ -40,12 +45,8 @@ let name = "David";
 
       # Emacs is my editor
       export ALTERNATE_EDITOR=""
-      export EDITOR="emacsclient -t"
-      export VISUAL="emacsclient -c -a emacs"
-
-      e() {
-          emacsclient -t "$@"
-      }
+      export EDITOR="vim"
+      export VISUAL="vim"
 
       # nix shortcuts
       shell() {
