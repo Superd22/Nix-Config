@@ -44,7 +44,6 @@ with pkgs; [
   tmux
   unrar
   unzip
-  zsh-powerlevel10k
 
   # Python packages
   python3

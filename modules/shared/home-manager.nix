@@ -7,26 +7,13 @@ let name = "David";
   # Shared shell configuration
   zsh = {
     enable = true;
-    autocd = false;
-    cdpath = [ "~/.local/share/src" ];
-    plugins = [
-      {
-          name = "powerlevel10k";
-          src = pkgs.zsh-powerlevel10k;
-          file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-      }
-      {
-          name = "powerlevel10k-config";
-          src = lib.cleanSource ./config;
-          file = "p10k.zsh";
-      }
-    ];
-    initContent = lib.mkBefore ''
-      # Enable Powerlevel10k instant prompt. Must stay at the top of .zshrc.
-      if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-        source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-      fi
-
+    # autocd = false;
+    # cdpath = [ "~/.local/share/src" ];
+    # plugins = [];
+    enableCompletion = false;
+    # enableGlobalCompInit = false;
+    initContent = lib.mkMerge [
+    (lib.mkBefore ''
       if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
@@ -103,7 +90,59 @@ let name = "David";
         DB_SSL_CA=~/.aws/rds-ca-cert.pem \
         "$@"
       }
-    '';
+    '')
+    ];
+  };
+
+  starship = {
+    enable = false;
+    settings = {
+      add_newline = false;
+      command_timeout = 300;
+
+      character = {
+        success_symbol = "[➜](bold green)";
+        error_symbol = "[➜](bold red)";
+      };
+
+      directory = {
+        truncation_length = 5;
+        truncate_to_repo = false;
+      };
+
+      git_branch = {
+        symbol = " ";
+        disabled = true;
+      };
+
+      git_status = {
+        ahead = ''⇡''${count}'';
+        diverged = ''⇕⇡''${ahead_count}⇣''${behind_count}'';
+        behind = ''⇣''${count}'';
+        disabled = true;
+      };
+
+      nodejs = {
+        symbol = " ";
+        disabled = true;
+      };
+      python = {
+        symbol = " ";
+        disabled = true;
+      };
+      rust = {
+        symbol = " ";
+        disabled = true;
+      };
+      nix_shell = {
+        symbol = " ";
+        impure_msg = "[impure](bold red)";
+        pure_msg = "[pure](bold green)";
+        unknown_msg = "[unknown shell](bold yellow)";
+        format = "via [$symbol$state( \\($name\\))](bold blue) ";
+        disabled = true;
+      };
+    };
   };
 
   git = {
@@ -336,7 +375,7 @@ let name = "David";
   };
 
   tmux = {
-    enable = true;
+    enable = false;
     plugins = with pkgs.tmuxPlugins; [
       vim-tmux-navigator
       sensible
