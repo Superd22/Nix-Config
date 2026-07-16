@@ -20,7 +20,6 @@ _:
     };
 
     brews = [
-      "nvm"
       "git-secret"
       "deno"
       "fga"

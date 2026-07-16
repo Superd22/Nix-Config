@@ -6,7 +6,7 @@ let
     version = "1.0.0";
     src = ./.;
 
-    buildInputs = [ pkgs.swift pkgs.darwin.apple_sdk.frameworks.Cocoa ];
+    nativeBuildInputs = [ pkgs.swift ];
 
     buildPhase = ''
       swiftc -O -o screen-lock-monitor screen-lock-monitor.swift \

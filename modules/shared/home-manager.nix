@@ -12,12 +12,24 @@ let name = "David";
     # plugins = [];
     enableCompletion = false;
     # enableGlobalCompInit = false;
+    # Skip /etc/zshrc entirely — its `autoload -U compinit && compinit` races
+    # on stale ~/.zcompdump.* files and stalls interactive shell startup by 60s+,
+    # which causes VS Code's extension host to time out. We reimplement the
+    # essentials (brew shellenv, fast compinit) in initContent below.
+    envExtra = ''
+      export NOSYSZSHRC=1
+    '';
     initContent = lib.mkMerge [
     (lib.mkBefore ''
       if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
         . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
       fi
+
+      # Replacements for /etc/zshrc (skipped via NOSYSZSHRC in envExtra).
+      eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || true)"
+      autoload -Uz compinit && compinit -C
+      autoload -Uz bashcompinit && bashcompinit
 
       # Define variables for directories
       export PATH=$HOME/.pnpm-packages/bin:$HOME/.pnpm-packages:$PATH
@@ -50,9 +62,9 @@ let name = "David";
       # Always color ls and group directories
       alias ls='ls --color=auto'
 
-      export NVM_DIR="$HOME/.nvm"
-        [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-        [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+      # mise version manager — shims-only PATH (no `activate` precmd hook,
+      # which blocked interactive prompts and stalled zsh -ic startup).
+      export PATH="$HOME/.local/share/mise/shims:$PATH"
 
       # Pick up & export secrets
       for file in ~/.secrets/*; do
@@ -95,7 +107,7 @@ let name = "David";
   };
 
   starship = {
-    enable = false;
+    enable = true;
     settings = {
       add_newline = false;
       command_timeout = 300;
