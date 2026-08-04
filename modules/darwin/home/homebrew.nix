@@ -27,6 +27,7 @@ _:
       "rust"
       "httpie"
       "sf"
+      "jakubkontra/tap/cpm"
     ];
     casks = [
       # Development Tools
