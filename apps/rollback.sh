@@ -1,9 +1,9 @@
-#!/bin/sh -e
+# Built by flake.nix into a writeShellApplication; run with `nix run .#rollback`.
 
-GREEN='\033[1;32m'
-YELLOW='\033[1;33m'
-RED='\033[1;31m'
-NC='\033[0m'
+GREEN=$'\033[1;32m'
+YELLOW=$'\033[1;33m'
+RED=$'\033[1;31m'
+NC=$'\033[0m'
 
 FLAKE="macos"
 
@@ -11,7 +11,7 @@ echo "${YELLOW}Available generations:${NC}"
 /run/current-system/sw/bin/darwin-rebuild --list-generations
 
 echo "${YELLOW}Enter the generation number for rollback:${NC}"
-read GEN_NUM
+read -r GEN_NUM
 
 if [ -z "$GEN_NUM" ]; then
   echo "${RED}No generation number entered. Aborting rollback.${NC}"
@@ -19,6 +19,6 @@ if [ -z "$GEN_NUM" ]; then
 fi
 
 echo "${YELLOW}Rolling back to generation $GEN_NUM...${NC}"
-/run/current-system/sw/bin/darwin-rebuild switch --flake .#$FLAKE --switch-generation $GEN_NUM
+/run/current-system/sw/bin/darwin-rebuild switch --flake ".#$FLAKE" --switch-generation "$GEN_NUM"
 
 echo "${GREEN}Rollback to generation $GEN_NUM complete!${NC}"

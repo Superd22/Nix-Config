@@ -40,7 +40,8 @@
     let
       user = "david";
       system = "aarch64-darwin";
-      devShell = system: let pkgs = nixpkgs.legacyPackages.${system}; in {
+      pkgs = nixpkgs.legacyPackages.${system};
+      devShell = {
         default = with pkgs; mkShell {
           nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey ];
           shellHook = with pkgs; ''
@@ -48,28 +49,22 @@
           '';
         };
       };
-      mkApp = scriptName: system: {
-        type = "app";
-        program = "${(nixpkgs.legacyPackages.${system}.writeScriptBin scriptName ''
-          #!/usr/bin/env bash
-          PATH=${nixpkgs.legacyPackages.${system}.git}/bin:$PATH
-          echo "Running ${scriptName} for ${system}"
-          exec ${self}/apps/${system}/${scriptName}
-        '')}/bin/${scriptName}";
+      # writeShellApplication runs shellcheck at build time and pins the
+      # runtime dependencies, so the scripts are checked rather than just
+      # executed out of the source tree.
+      mkScript = name: pkgs.writeShellApplication {
+        inherit name;
+        runtimeInputs = with pkgs; [ coreutils git ];
+        text = builtins.readFile (./apps + "/${name}.sh");
       };
-      mkDarwinApps = system: {
-        "apply" = mkApp "apply" system;
-        "build" = mkApp "build" system;
-        "build-switch" = mkApp "build-switch" system;
-        "copy-keys" = mkApp "copy-keys" system;
-        "create-keys" = mkApp "create-keys" system;
-        "check-keys" = mkApp "check-keys" system;
-        "rollback" = mkApp "rollback" system;
-      };
+      scripts = nixpkgs.lib.genAttrs [ "build" "build-switch" "rollback" ] mkScript;
     in
     {
-      devShells.${system} = devShell system;
-      apps.${system} = mkDarwinApps system;
+      devShells.${system} = devShell;
+      packages.${system} = scripts;
+      apps.${system} = nixpkgs.lib.mapAttrs
+        (_: drv: { type = "app"; program = nixpkgs.lib.getExe drv; })
+        scripts;
 
       darwinConfigurations.${system} = darwin.lib.darwinSystem {
         inherit system;
