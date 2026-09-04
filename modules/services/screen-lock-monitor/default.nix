@@ -1,6 +1,7 @@
 # Called by ../default.nix as a plain function, not evaluated as a module, so
-# the account name is passed in rather than read off `config`.
-{ pkgs, user }:
+# the account name and the betterdisplaycli path are passed in rather than read
+# off `config`.
+{ lib, pkgs, user, betterdisplaycli }:
 
 let
   screenLockMonitor = pkgs.stdenv.mkDerivation {
@@ -10,7 +11,16 @@ let
 
     nativeBuildInputs = [ pkgs.swift ];
 
+    # The Swift source drives BetterDisplay, and used to reach it through
+    # /usr/local/bin/betterdisplaycli — a path another module's activation
+    # script happened to write. Baking the store path in at build time makes
+    # that dependency an argument to this derivation instead of a convention
+    # nothing enforced (#21). --replace-fail so a renamed placeholder is a build
+    # error rather than a binary that silently points at nothing.
     buildPhase = ''
+      substituteInPlace screen-lock-monitor.swift \
+        --replace-fail "@betterdisplaycli@" "${lib.getExe betterdisplaycli}"
+
       swiftc -O -o screen-lock-monitor screen-lock-monitor.swift \
         -framework Cocoa -framework Foundation
     '';

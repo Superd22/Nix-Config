@@ -29,16 +29,14 @@
     # modules/desktop/sketchybar/sketchybar.nix; same end state, expressed here.
     sketchybar.enable = false;
 
-    # The /usr/local/bin shims for the BetterDisplay cask, plus
-    # workspace-to-next-monitor, which aerospace binds to.
+    # `betterdisplaycli`, which the raycast scripts below are built out of.
     betterdisplay.enable = true;
 
     # On: this config manages the Dock. Which today means stripping it, since
     # `local.dock.enable` is false and the entries list is empty.
     dock.enable = true;
 
-    # The ultra-wide script commands. They drive betterdisplaycli, so this
-    # wants betterdisplay.enable above (#21).
+    # The ultra-wide script commands. These assert betterdisplay.enable above.
     raycast.enable = true;
   };
 
