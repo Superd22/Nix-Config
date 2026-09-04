@@ -76,9 +76,9 @@ done
 
 say()  { gum style --foreground "$ACCENT" "$*"; }
 note() { gum style --faint "$*"; }
-ok()   { gum log --level info "$*"; }
-warn() { gum log --level warn "$*"; }
-die()  { gum log --level error "$*"; exit 1; }
+ok()   { gum style --foreground "$ACCENT" "  ✓ $*"; }
+warn() { gum style --foreground 214 "  ! $*"; }
+die()  { gum style --foreground 196 "  ✗ $*" >&2; exit 1; }
 
 # A titled box for each step; the number is what the user matches against
 # the plan printed at the start.
@@ -108,6 +108,38 @@ banner() {
 5. \`build-switch\` (long; asks for sudo)
 6. The short list of things nix cannot do
 MD
+  echo
+}
+
+# What is already on this Mac, before anything is asked. A rerun after a
+# failure should read as "picking up where it stopped", not as a fresh start.
+situation() {
+  local current
+  current="$(hostname -s)"
+  local clone="not yet"
+  [ -d "$DEST/.git" ] && clone="already at $DEST"
+  local host="no hosts/$current in the config yet, so step 2 will ask"
+  if [ -d "$DEST/hosts/$current" ]; then
+    host="hosts/$current exists"
+  elif [ -n "${INIT_HOSTNAME:-}" ]; then
+    host="INIT_HOSTNAME=$INIT_HOSTNAME"
+  fi
+  local keys="none, step 3 imports them"
+  if [ -f "$SSH_DIR/id_rsa" ] && [ -f "$SSH_DIR/id_ed25519" ]; then
+    keys="id_rsa and id_ed25519 already in $SSH_DIR"
+  elif [ -f "$SSH_DIR/id_rsa" ] || [ -f "$SSH_DIR/id_ed25519" ]; then
+    keys="only one of id_rsa / id_ed25519 is in $SSH_DIR; step 3 imports the bundle"
+  fi
+  local bundles
+  bundles="$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME" -maxdepth 1 -name 'keys-*.age' 2>/dev/null | head -3 | tr '\n' ' ')"
+  gum style --border rounded --border-foreground "$ACCENT" --padding "0 2" \
+    "$(gum style --bold --foreground "$ACCENT" 'Found on this Mac')" \
+    "user       $USER" \
+    "hostname   $current" \
+    "host dir   $host" \
+    "clone      $clone" \
+    "keys       $keys" \
+    "bundle     ${bundles:-none seen in Downloads, Desktop or ~; have it AirDropped before step 3}"
   echo
 }
 
@@ -269,7 +301,8 @@ import_keys() {
   fi
   [ -f "$bundle" ] || die "$bundle: no such file"
 
-  say "age will ask for the bundle's passphrase now."
+  say "age asks for the bundle's passphrase next; that prompt is age's own, not mine."
+  note "A wrong passphrase fails with 'incorrect passphrase'. Nothing is written; re-run init and try again."
   # keys.sh refuses to overwrite a differing key; that is the right default
   # for a wizard too. --force is a manual decision, see the docs.
   keys import "$bundle"
@@ -380,6 +413,7 @@ main() {
       exit 0
       ;;
   esac
+  situation
   confirm "Start?" || exit 130
 
   clone_config
