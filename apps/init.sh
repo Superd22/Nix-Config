@@ -384,7 +384,7 @@ checklist() {
 - **Open a new terminal.** The one you are in predates the switch.
 - **App logins**: Docker Desktop, Slack, Spotify, Steam, NordVPN, Pritunl, ZeroTier, Parsec, 1Password.
 - **Raycast**: point it at `modules/config/raycast/`, import its settings export.
-- **AWS SSO**: copy `~/.aws/` from the old Mac, then `aws sso login`.
+- **Cloud logins**: `~/.aws/config`, the RDS CA bundle and the gcloud project are in place; run `wm-login` once for the browser half, and again when `withPg` fails with an SSO error. A hand-written `~/.aws/config` is at `~/.aws/config.before-nix`.
 - **Monitor names**: rename them `Left` and `Right` in BetterDisplay.
 - **macOS permissions**: Accessibility for aerospace, Screen Recording for the lock monitor and OBS.
 - **The old Mac**: only now, and only after the bundle has a second copy somewhere safe. Section 9 of the doc.
