@@ -38,7 +38,6 @@
   };
   outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, openfgaTap, home-manager, nixpkgs, agenix, secrets } @inputs:
     let
-      user = "david";
       system = "aarch64-darwin";
       pkgs = nixpkgs.legacyPackages.${system};
       devShell = {
@@ -69,9 +68,11 @@
         modules = [
           home-manager.darwinModules.home-manager
           nix-homebrew.darwinModules.nix-homebrew
-          {
+          # Homebrew is owned by the machine's user, so this needs the config
+          # rather than a flake-level `let` binding.
+          ({ config, ... }: {
             nix-homebrew = {
-              inherit user;
+              user = config.mine.user.name;
               enable = true;
               taps = {
                 "homebrew/homebrew-core" = homebrew-core;
@@ -83,7 +84,7 @@
               mutableTaps = false;
               autoMigrate = true;
             };
-          }
+          })
           ./hosts/common/darwin.nix
           (./hosts + "/${hostName}")
         ];

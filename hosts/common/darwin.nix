@@ -1,7 +1,5 @@
 { agenix, config, pkgs, ... }:
 
-let user = "david"; in
-
 {
 
   imports = [
@@ -67,7 +65,7 @@ let user = "david"; in
 
   system = {
     stateVersion = 4;
-    primaryUser = user;
+    primaryUser = config.mine.user.name;
     defaults = {
       NSGlobalDomain = {
         AppleShowAllExtensions = true;

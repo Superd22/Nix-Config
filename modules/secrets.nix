@@ -1,17 +1,20 @@
 { config, pkgs, agenix, secrets, ... }:
 
-let user = "david"; in
+let
+  user = config.mine.user.name;
+  home = config.users.users.${user}.home;
+in
 {
   age.identityPaths = [
-    "/Users/${user}/.ssh/id_ed25519"
+    "${home}/.ssh/id_ed25519"
   ];
 
   age.secrets.GITHUB_NPM_TOKEN = {
     symlink = true;
-    path = "/Users/${user}/.secrets/GITHUB_TOKEN";
+    path = "${home}/.secrets/GITHUB_TOKEN";
     file = "${secrets}/github-npm-token.age";
     mode = "600";
-    owner = "${user}";
+    owner = user;
     group = "staff";
   };
 

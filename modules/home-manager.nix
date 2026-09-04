@@ -1,7 +1,7 @@
 { config, pkgs, lib, home-manager, ... }:
 
 let
-  user = "david";
+  user = config.mine.user.name;
   # Define the content of your file as a derivation
 
   homeFiles = import ./files.nix { inherit config pkgs; };
