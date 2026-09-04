@@ -35,7 +35,12 @@ in
       };
   };
 
-  config =
+  # `mine.desktop.dock.enable` is the outer switch: whether this config manages
+  # the Dock at all. `local.dock.enable` below is the inner one: given that we
+  # are managing it, do we populate it from `entries` or strip it bare. Leaving
+  # the outer switch off means the Dock is left exactly as the user arranged it,
+  # which is the right default on a machine that is not mine.
+  config = mkIf config.mine.desktop.dock.enable (
     mkMerge [
       (mkIf (cfg.enable) (
         let
@@ -82,5 +87,6 @@ in
             echo >&2 "Dock removed"
         '';
       })
-    ];
+    ]
+  );
 }
