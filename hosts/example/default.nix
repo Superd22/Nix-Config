@@ -10,8 +10,9 @@
 # `nix flake show`, `nix flake check` and CI all need it to — while being
 # visibly wrong to anyone who actually tries to build it.
 #
-# It is not derived from hosts/David-M3-Pro and is meant to diverge from it as
-# the package lists (#9) land.
+# It is not derived from hosts/David-M3-Pro and diverges from it deliberately:
+# the flags below are what a generic fork should get, and the Homebrew lists
+# (#9) are a short seed rather than one person's applications.
 { ... }:
 
 {
@@ -46,6 +47,28 @@
     # fail the assertion in modules/desktop/raycast with betterdisplay off,
     # which is the point of that assertion.
     raycast.enable = false;
+  };
+
+  # Homebrew (#9). This is the seed a fork copies and edits, so it is a short
+  # generic list rather than a copy of hosts/David-M3-Pro — Steam, NordVPN and
+  # Autodesk Fusion are exactly the sort of thing that should not arrive with a
+  # config someone else wrote. Add what you actually use; `brew search` takes
+  # the same names.
+  #
+  # Casks a module cannot work without are not listed here and never need to be:
+  # `mine.desktop.betterdisplay.enable` pulls the betterdisplay cask itself, and
+  # `mine.desktop.raycast.enable` pulls raycast.
+  mine.homebrew = {
+    # Formulae: command-line tools Homebrew has and nixpkgs does not, or does
+    # not have working on darwin. Everything else goes in
+    # modules/home-packages.nix, which is nix and therefore reproducible.
+    brews = [ ];
+
+    # Casks: GUI applications, which macOS mostly does not have in nixpkgs.
+    casks = [
+      "visual-studio-code"
+      "vlc"
+    ];
   };
 
   # Off. A launchd agent watching lock events is not a generic want. The label

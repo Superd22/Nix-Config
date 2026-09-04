@@ -291,8 +291,8 @@ in
       cfg.datasources;
 
     # "I want DataGrip" is one switch: the app and its connections. The cask
-    # used to sit unconditionally in modules/homebrew.nix; this is the shape #9
-    # gives the rest of them.
+    # used to sit unconditionally in modules/homebrew.nix; #9 gave the rest of
+    # them the same shape — either a module owns a cask, or a host lists it.
     homebrew.casks = [ "datagrip" ];
 
     home-manager.users.${user} = { lib, ... }: {

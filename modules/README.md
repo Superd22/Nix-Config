@@ -17,7 +17,8 @@ Everything here runs on macOS (aarch64-darwin). There is no `shared` /
 │                          # plus datagrip/, which is a nix-darwin module (it owns
 │                          # both the cask and the IDE's datasource file)
 ├── files.nix              # Non-Nix, static configuration files (now immutable!)
-├── homebrew.nix           # Homebrew policy, packages & casks
+├── homebrew.nix           # Homebrew policy; the lists come from mine.homebrew.*
+│                          # in hosts/<hostname>
 ├── packages.nix           # System packages (environment.systemPackages)
 └── home-packages.nix      # User packages (home-manager), packages.nix plus extras
 ```

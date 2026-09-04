@@ -61,9 +61,8 @@
     '';
 
     betterdisplay.enable = lib.mkEnableOption ''
-      `betterdisplaycli`, a wrapper round the CLI that the BetterDisplay cask
-      hides inside its .app bundle. Needs the cask, which is currently listed
-      unconditionally in modules/homebrew.nix (#9 moves that here). Required by
+      BetterDisplay: installs the cask and `betterdisplaycli`, a wrapper round
+      the CLI that the cask hides inside its .app bundle. Required by
       `raycast.enable` below
     '';
 
@@ -75,11 +74,12 @@
     '';
 
     raycast.enable = lib.mkEnableOption ''
-      the Raycast script commands from modules/config/raycast, rendered into
-      ~/.config/raycast/scripts. Raycast still has to be pointed at that
-      directory by hand, once — see that directory's readme. Requires
-      `betterdisplay.enable` above; the ultra-wide scripts are mostly
-      `betterdisplaycli` calls, and there is an assertion that says so
+      Raycast: installs the cask and the script commands from
+      modules/config/raycast, rendered into ~/.config/raycast/scripts. Raycast
+      still has to be pointed at that directory by hand, once — see that
+      directory's readme. Requires `betterdisplay.enable` above; the ultra-wide
+      scripts are mostly `betterdisplaycli` calls, and there is an assertion
+      that says so
     '';
   };
 
@@ -93,6 +93,54 @@
       connections are in every project on every machine. Off means this config
       does not install DataGrip and never touches its files
     '';
+  };
+
+  # What to install from Homebrew. This is the "wanted by a person" half of the
+  # split in #9: modules/homebrew.nix keeps the activation policy and names no
+  # packages at all, and every package name that is pure preference is set in
+  # hosts/<hostname>.
+  #
+  # The other half — a cask a module cannot work without, like BetterDisplay for
+  # `mine.desktop.betterdisplay` — is declared by that module against
+  # `homebrew.casks` directly, the way `services.foo.enable` pulls `pkgs.foo`
+  # upstream. Those merge with what is set here; nobody has to list them.
+  options.mine.homebrew = {
+    brews = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "httpie" ];
+      description = ''
+        Homebrew formulae to install: command-line tools that nixpkgs either
+        does not have or does not have working on darwin. Anything nixpkgs
+        packages properly belongs in modules/home-packages.nix instead.
+      '';
+    };
+
+    casks = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "vlc" ];
+      description = ''
+        Homebrew casks to install: GUI applications, which on macOS is very
+        nearly all of them. A cask a module needs to function is declared by
+        that module rather than listed here.
+      '';
+    };
+
+    taps = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "example/tap" ];
+      description = ''
+        Extra taps to make available to `brew bundle`.
+
+        Note that flake.nix sets `nix-homebrew.mutableTaps = false`, so taps are
+        pinned as flake inputs and cloned from the store; a tap named here also
+        has to be added to `nix-homebrew.taps` there, or the activation will try
+        to fetch it and fail. The option exists so a fork that wants mutable
+        taps has the seam already in place.
+      '';
+    };
   };
 
   options.mine.services = {
