@@ -11,7 +11,9 @@
 #   3. import the key bundle from `keys export` (apps/keys.sh);
 #   4. switch the clone to ssh, run `keys doctor`;
 #   5. build-switch;
-#   6. print what nix cannot do.
+#   6. wm-login, the browser logins nix cannot do (when the host has the
+#      WeMaintain module on, #29 / #32);
+#   7. print what nix cannot do.
 #
 # Keys before doctor before build: without id_rsa the private `secrets` input
 # cannot be fetched and the flake fails at evaluation with an error that
@@ -106,7 +108,8 @@ banner() {
 3. Import the key bundle from \`keys export\`
 4. \`keys doctor\`
 5. \`build-switch\` (long; asks for sudo)
-6. The short list of things nix cannot do
+6. \`wm-login\`: AWS, gcloud and the VPN profile, in the browser
+7. The short list of things nix cannot do
 MD
   echo
 }
@@ -378,13 +381,32 @@ push_host_if_new() {
   fi
 }
 
+# The browser logins nix cannot do (#29, #32): AWS SSO, gcloud, and minting
+# the VPN profile. Only on hosts with the WeMaintain module on, which is what
+# puts wm-login into the system profile. The shell running init predates the
+# switch, so it is reached by absolute path.
+WM_LOGIN=/run/current-system/sw/bin/wm-login
+work_logins() {
+  step "6 · Work logins" "AWS SSO, gcloud and the VPN profile, each a browser consent screen"
+  if [ ! -x "$WM_LOGIN" ]; then
+    note "This host has no wm-login (mine.work.wemaintain.enable is off); nothing to do."
+    return
+  fi
+  note "Each one opens the browser and waits. Later, 'wm-login' redoes any that expired."
+  if ! confirm "Run wm-login now?"; then
+    say "Later, then:  wm-login"
+    return
+  fi
+  "$WM_LOGIN" || warn "wm-login did not finish; run it again from a new terminal."
+}
+
 checklist() {
-  step "6 · Not nix's job" "see $DOCS, 'Things nix does not do for you'"
+  step "7 · Not nix's job" "see $DOCS, 'Things nix does not do for you'"
   gum format <<'MD'
 - **Open a new terminal.** The one you are in predates the switch.
-- **App logins**: Docker Desktop, Slack, Spotify, Steam, NordVPN, ZeroTier, Parsec, 1Password. Not Pritunl: `wm-login` mints its profile.
+- **App logins**: Docker Desktop, Slack, Spotify, Steam, NordVPN, ZeroTier, Parsec, 1Password. Not Pritunl: `wm-login` minted its profile.
 - **Raycast**: point it at `modules/config/raycast/`, import its settings export.
-- **Cloud logins**: `~/.aws/config`, the RDS CA bundle and the gcloud project are in place; run `wm-login` once for the browser half — AWS, Google and the Pritunl VPN profile — and again when `withPg` fails with an SSO error. A hand-written `~/.aws/config` is at `~/.aws/config.before-nix`.
+- **Cloud logins**: done by `wm-login` just now. Run it again whenever `withPg` fails with an SSO error. A hand-written `~/.aws/config` from before is at `~/.aws/config.before-nix`.
 - **Monitor names**: rename them `Left` and `Right` in BetterDisplay.
 - **macOS permissions**: Accessibility for aerospace, Screen Recording for the lock monitor and OBS.
 - **The old Mac**: only now, and only after the bundle has a second copy somewhere safe. Section 9 of the doc.
@@ -421,6 +443,7 @@ main() {
   import_keys
   run_doctor
   run_build_switch
+  work_logins
   push_host_if_new
   checklist
 }
