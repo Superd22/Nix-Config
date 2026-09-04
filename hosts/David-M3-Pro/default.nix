@@ -39,4 +39,7 @@
   };
 
   mine.services."screen-lock-monitor".enable = true;
+
+  # This machine has SSH access to the private secrets repo (#17).
+  mine.secrets.enable = true;
 }

@@ -46,4 +46,7 @@
   # Off. A launchd agent labelled com.david.* watching lock events is not a
   # generic want.
   mine.services."screen-lock-monitor".enable = false;
+
+  # `mine.secrets.enable` is deliberately left at its default (false): this host
+  # must evaluate with no access to the private secrets repo (#17).
 }

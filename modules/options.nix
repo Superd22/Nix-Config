@@ -81,4 +81,10 @@
       modules/services/screen-lock-monitor that watches macOS lock/unlock events
     '';
   };
+
+  # Off by default: the secrets module interpolates the `secrets` flake input,
+  # which is a private repo. Anything that forces it needs SSH access nobody
+  # but its owner has, so a host has to opt in explicitly (#17).
+  options.mine.secrets.enable =
+    lib.mkEnableOption "agenix-managed secrets from the private `secrets` flake input";
 }
