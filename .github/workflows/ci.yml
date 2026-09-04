@@ -1,0 +1,124 @@
+# Evaluation CI (#10).
+#
+# `hosts/example` is the seed the setup wizard copies, and nobody runs it day to
+# day, so it rots silently unless something checks it. That is the gap this
+# workflow closes, and it is deliberately the only host here: `David-M3-Pro` is
+# verified every time its owner runs `build-switch`, and evaluating it in CI
+# would mean faking the private `secrets` input it enables — checking a system
+# that is not the one actually built.
+#
+# Evaluation, not building, is what runs on every push: a renamed option, a
+# missing attribute or a typo'd flag is caught by `nix eval` in seconds, while a
+# full build costs a macOS runner many minutes and catches a rarer class of
+# breakage (a dead cask, a broken package). The full build is on a weekly
+# schedule in a separate job, so a slow or flaky build never blocks a PR.
+name: ci
+
+on:
+  # The branch filter is load-bearing, not tidiness: a push to a branch that has
+  # an open PR fires `push` *and* `pull_request`, which is two macOS runners
+  # doing identical work. The concurrency group below does not merge them —
+  # `github.ref` is `refs/heads/<branch>` for one and `refs/pull/<n>/merge` for
+  # the other, so they land in different groups. Restricting `push` to the
+  # default branch gives one run per PR commit and one per merge to main.
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Mondays, 05:00 UTC.
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run pointless. (This cancels
+# superseded runs; it is not what prevents the push/PR duplication above.)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # nixpkgs.config.allowUnfree is set in-tree, but several paths still consult
+  # the environment, and evaluation aborts without it.
+  NIXPKGS_ALLOW_UNFREE: 1
+  # The installer turns these on already; being explicit means a change in its
+  # defaults shows up as nothing at all rather than as a confusing failure.
+  NIX_CONFIG: |
+    experimental-features = nix-command flakes
+
+jobs:
+  # This is also the standing acceptance test for #17: `example` must evaluate
+  # for somebody who has no access to anything private. The job is given no SSH
+  # key and no credentials, and the GIT_SSH_COMMAND below makes any attempt to
+  # reach the private secrets repo fail immediately and loudly instead of
+  # hanging on a prompt. If someone reintroduces an unconditional `${secrets}`
+  # interpolation, this job goes red.
+  eval-example:
+    name: eval hosts/example (no private access)
+    # macos-15 is arm64, matching the flake's aarch64-darwin.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      # Nix is not preinstalled on GitHub's macOS runners, and this repo assumes
+      # Determinate Nix (hosts/common/darwin.nix sets nix.enable = false).
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Evaluate darwinConfigurations.example.system.drvPath
+        env:
+          # No agent, no identity, no prompts: any private fetch fails here.
+          GIT_SSH_COMMAND: >-
+            ssh -o IdentityAgent=none -o IdentityFile=/dev/null
+            -o IdentitiesOnly=yes -o BatchMode=yes
+        run: |
+          nix eval --raw .#darwinConfigurations.example.system.drvPath
+          echo
+
+  # `nix build` on the app scripts is what runs shellcheck over apps/*.sh:
+  # they are built with writeShellApplication, which shellchecks at build time.
+  apps:
+    name: build app scripts (shellcheck)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: nix build .#build .#build-switch .#rollback
+        run: nix build --no-link --print-out-paths .#build .#build-switch .#rollback
+
+  # The expensive check: an actual build of the example host, which catches what
+  # evaluation cannot — a package that no longer builds, a cask that vanished.
+  # Weekly only, and never a required check on a PR.
+  build-example:
+    name: build hosts/example (weekly)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build hosts/example
+        env:
+          GIT_SSH_COMMAND: >-
+            ssh -o IdentityAgent=none -o IdentityFile=/dev/null
+            -o IdentitiesOnly=yes -o BatchMode=yes
+        run: nix build --no-link .#darwinConfigurations.example.system
+
+# Two checks from #10 are deliberately not here yet, because both would fail on
+# main today and a check that is red the day it merges teaches everyone to
+# ignore CI:
+#
+#   - "no proper nouns in modules/" — depends on #9, which moves the package
+#     lists into hosts/.
+#   - "fail if /Users/david appears outside hosts/" — depends on #4;
+#     modules/desktop/betterdisplay/betterdisplaycli.nix and
+#     modules/services/screen-lock-monitor/default.nix still contain it.
+#
+# Add both as a `grep` job once #4 and #9 land.
+#
+# If CI coverage of the owner's host is ever wanted, the honest mechanism is a
+# deploy key to nix-secrets in a GitHub secret: no fake files in the repo, and a
+# real drvPath. Note that PRs from forks do not receive repo secrets, so such a
+# job needs `continue-on-error` or a trigger that excludes fork PRs.
