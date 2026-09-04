@@ -49,6 +49,21 @@ in
     # nothing at all without the thing that scans that directory (#9).
     homebrew.casks = [ "raycast" ];
 
+    # The hotkey that opens Raycast, so a rebuilt Mac does not come up on
+    # Raycast's default (which collides with Spotlight) and wait to be clicked
+    # through the onboarding.
+    #
+    # `Control-2` is not a typo for the digit: the value is
+    # `<modifiers>-<virtual key code>`, and 2 is kVK_ANSI_D. So this reads
+    # "Control-D".
+    #
+    # Raycast keeps its preferences in memory and writes them out when it
+    # quits, so an activation while it is running is overwritten the next time
+    # it exits. Restart Raycast — or set it once in its own settings — for the
+    # value written here to be the one that sticks.
+    system.defaults.CustomUserPreferences."com.raycast.macos".raycastGlobalHotkey =
+      "Control-2";
+
     # The ultra-wide script commands are 17 calls to `betterdisplaycli` and
     # nothing else would drive the PiP layout they set up, so raycast without
     # betterdisplay is a half-configured machine rather than a smaller one.
