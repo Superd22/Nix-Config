@@ -6,14 +6,16 @@ Everything here runs on macOS (aarch64-darwin). There is no `shared` /
 ## Layout
 ```
 .
-├── config/                # Config files not written in Nix (emacs, raycast, datagrip)
+├── config/                # Config files not written in Nix (emacs, raycast)
 ├── desktop/               # Window management & display: aerospace, betterdisplay,
 │                          # dock, sketchybar
 ├── services/              # Nix-darwin services (screen-lock-monitor)
 ├── nixpkgs.nix            # nixpkgs config; defines how we import overlays
 ├── secrets.nix            # agenix secrets
 ├── home-manager.nix       # The nix-darwin module wiring up home-manager
-├── programs.nix           # home-manager programs (git, zsh, vim, tmux, ssh, ...)
+├── programs/              # home-manager programs (git, zsh, vim, tmux, ssh, ...),
+│                          # plus datagrip/, which is a nix-darwin module (it owns
+│                          # both the cask and the IDE's datasource file)
 ├── files.nix              # Non-Nix, static configuration files (now immutable!)
 ├── homebrew.nix           # Homebrew policy, packages & casks
 ├── packages.nix           # System packages (environment.systemPackages)

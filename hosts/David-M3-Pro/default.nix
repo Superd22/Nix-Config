@@ -40,6 +40,38 @@
     raycast.enable = true;
   };
 
+  # DataGrip and its connections (#7). These are the datasources that used to
+  # live in a committed `.idea/dataSources.xml` nothing imported; they are now
+  # global, so they are in every project this machine's DataGrip opens.
+  #
+  # The user names are the ones DataGrip was actually using. They disagree with
+  # the `withPg` shell helpers on staging (wmadmin here, backend_dev there);
+  # that reconciliation belongs to #8, which will feed both from one
+  # declaration. Until then this is a faithful copy of what was in use.
+  mine.programs.datagrip = {
+    enable = true;
+
+    datasources =
+      let
+        wemaintain = host: {
+          driver = "postgresql";
+          url = "jdbc:postgresql://wemaintain-pgsql-${host}.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com:5432/postgres";
+          awsProfile = "prod:sudo";
+          awsRegion = "eu-west-1";
+        };
+      in
+      {
+        "[STAGING] PG" = wemaintain "staging" // { userName = "wmadmin"; };
+        "[PROD] PG" = wemaintain "prod" // { userName = "backend_dev"; };
+        "DANGER WRITE PG PROD" = wemaintain "prod" // { userName = "wmadmin"; };
+
+        "postgres@localhost" = {
+          driver = "postgresql";
+          url = "jdbc:postgresql://localhost:5432/postgres";
+        };
+      };
+  };
+
   mine.services."screen-lock-monitor".enable = true;
 
   # This machine has SSH access to the private secrets repo (#17).

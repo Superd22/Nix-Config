@@ -32,7 +32,8 @@ _:
       # Development Tools
       "docker-desktop"
       "visual-studio-code"
-      "datagrip"
+      # datagrip is added by modules/programs/datagrip when
+      # `mine.programs.datagrip.enable` is on (#7), the shape #9 gives the rest.
       "openlens"
       "deskflow"
       "signal"

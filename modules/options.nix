@@ -83,6 +83,18 @@
     '';
   };
 
+  # Programs, as opposed to the desktop units above: things you run rather than
+  # things that arrange your screen. The datasource schema that goes with this
+  # flag is declared in modules/programs/datagrip, which is where it is used.
+  options.mine.programs = {
+    datagrip.enable = lib.mkEnableOption ''
+      DataGrip: installs the cask and applies
+      `mine.programs.datagrip.datasources` as global datasources, so the same
+      connections are in every project on every machine. Off means this config
+      does not install DataGrip and never touches its files
+    '';
+  };
+
   options.mine.services = {
     # Hyphenated to match the launchd label and the directory it lives in.
     "screen-lock-monitor".enable = lib.mkEnableOption ''
