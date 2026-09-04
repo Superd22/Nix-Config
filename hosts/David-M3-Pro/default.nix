@@ -42,7 +42,8 @@
 
   # Work (#8). One flag: ~/.aws/config with every SSO profile, the RDS CA
   # bundle, `withPg`/`withPgProd`, the DataGrip datasources for the same
-  # databases, gcloud on the data project, and `wm-login`. The profiles,
+  # databases, gcloud on the data project, the Pritunl cask and its VPN
+  # profile (#32), and `wm-login` to do all the browser halves. The profiles,
   # accounts and databases are declared by the module; anything personal on
   # top of them would go here as another `mine.work.wemaintain.*` entry.
   #
@@ -107,9 +108,9 @@
       # Browsers
       "sigmaos"
 
-      # Networking
+      # Networking. Pritunl is not here: it comes with
+      # `mine.work.wemaintain.enable`, which owns the VPN profile too (#32).
       "zerotier-one"
-      "pritunl"
       "nordvpn"
 
       # 3D printing and CAD
