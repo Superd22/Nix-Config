@@ -32,8 +32,8 @@
     # Off. A status bar is a taste, not a default.
     sketchybar.enable = false;
 
-    # Off. The activation script writes to /usr/local/bin, and none of it means
-    # anything without the BetterDisplay cask actually installed.
+    # Off. `betterdisplaycli` wraps a binary inside the BetterDisplay app
+    # bundle, so it means nothing without the cask actually installed.
     betterdisplay.enable = false;
 
     # Off. With `local.dock.enable` false this would strip the Dock bare on
@@ -41,8 +41,10 @@
     # surprise.
     dock.enable = false;
 
-    # Off. The scripts here are for one specific ultra-wide monitor, and
-    # wiring them up needs a manual step in Raycast's settings anyway.
+    # Off. The scripts here are for one specific ultra-wide monitor, and wiring
+    # them up needs a manual step in Raycast's settings anyway. It would also
+    # fail the assertion in modules/desktop/raycast with betterdisplay off,
+    # which is the point of that assertion.
     raycast.enable = false;
   };
 

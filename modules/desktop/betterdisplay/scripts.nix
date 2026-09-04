@@ -1,15 +1,21 @@
-# Helper scripts that drive BetterDisplay and AeroSpace together.
-#
-# They are packages rather than files linked out of the working tree: the store
-# path is what `betterdisplaycli.nix` and the AeroSpace keybindings point at, so
-# the config no longer depends on the repo being checked out at one particular
-# path.
+# A package set rather than a module, so modules/desktop/raycast can take
+# `betterdisplaycli` as a runtime input without depending on this module's
+# `config` having been evaluated.
 { pkgs }:
 
 {
-  workspace-to-next-monitor = pkgs.writeShellApplication {
-    name = "workspace-to-next-monitor";
-    runtimeInputs = with pkgs; [ aerospace jq ];
-    text = builtins.readFile ./next-monitor-of-workspace.sh;
+  # BetterDisplay ships its CLI inside the .app bundle and puts nothing on PATH.
+  # This used to be a here-doc written into /usr/local/bin by an activation
+  # script; as a package it is in the store, on PATH for both the shell and
+  # anything that lists it as a runtime input, and a rollback takes it with it
+  # (#21).
+  #
+  # The path it execs is outside the store and always will be — it belongs to
+  # the cask, which Homebrew owns. Nothing can be done about that here.
+  betterdisplaycli = pkgs.writeShellApplication {
+    name = "betterdisplaycli";
+    text = ''
+      exec /Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay "$@"
+    '';
   };
 }

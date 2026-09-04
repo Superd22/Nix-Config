@@ -1,7 +1,12 @@
 import Cocoa
 import Foundation
 
-let betterdisplaycli = "/usr/local/bin/betterdisplaycli"
+// Replaced with the store path of the `betterdisplaycli` package at build time
+// by default.nix; the placeholder is not a path and this will not compile into
+// anything runnable without that substitution (#21). It used to be a literal
+// /usr/local/bin path written by another module's activation script, with
+// nothing anywhere saying so.
+let betterdisplaycli = "@betterdisplaycli@"
 let mainMonitorName = "Left"
 let physicalMonitorName = "Odyssey G93SC"
 
@@ -11,7 +16,17 @@ func run(_ arguments: [String]) -> String {
     process.executableURL = URL(fileURLWithPath: betterdisplaycli)
     process.arguments = arguments
     process.standardOutput = pipe
-    try? process.run()
+    do {
+        try process.run()
+    } catch {
+        // This was `try?`, which meant a missing or broken betterdisplaycli
+        // left the agent running and quietly doing nothing at every lock and
+        // unlock. Say so in the log instead.
+        FileHandle.standardError.write(
+            "screen-lock-monitor: could not run \(betterdisplaycli): \(error)\n"
+                .data(using: .utf8)!)
+        return ""
+    }
     process.waitUntilExit()
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

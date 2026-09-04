@@ -52,7 +52,8 @@
   options.mine.desktop = {
     aerospace.enable = lib.mkEnableOption ''
       the AeroSpace tiling window manager, configured from
-      modules/desktop/aerospace/.aerospace.toml
+      modules/desktop/aerospace/.aerospace.toml. Also installs
+      `workspace-to-next-monitor`, which the ctrl-shift-alt-<N> bindings call
     '';
 
     sketchybar.enable = lib.mkEnableOption ''
@@ -60,11 +61,10 @@
     '';
 
     betterdisplay.enable = lib.mkEnableOption ''
-      the BetterDisplay helper scripts: a `betterdisplaycli` shim, and
-      `workspace-to-next-monitor`, which is a package on PATH and also shimmed
-      into /usr/local/bin because the .aerospace.toml keybindings call it by
-      absolute path (#21). Needs the `betterdisplay` cask, which is currently
-      listed in modules/homebrew.nix (#9 moves that here)
+      `betterdisplaycli`, a wrapper round the CLI that the BetterDisplay cask
+      hides inside its .app bundle. Needs the cask, which is currently listed
+      unconditionally in modules/homebrew.nix (#9 moves that here). Required by
+      `raycast.enable` below
     '';
 
     dock.enable = lib.mkEnableOption ''
@@ -77,9 +77,9 @@
     raycast.enable = lib.mkEnableOption ''
       the Raycast script commands from modules/config/raycast, rendered into
       ~/.config/raycast/scripts. Raycast still has to be pointed at that
-      directory by hand, once — see that directory's readme. The ultra-wide
-      scripts also drive `betterdisplaycli`, so they want
-      `mine.desktop.betterdisplay.enable` as well (#21)
+      directory by hand, once — see that directory's readme. Requires
+      `betterdisplay.enable` above; the ultra-wide scripts are mostly
+      `betterdisplaycli` calls, and there is an assertion that says so
     '';
   };
 
@@ -88,6 +88,9 @@
     "screen-lock-monitor".enable = lib.mkEnableOption ''
       the screen-lock-monitor launchd agent, a small Swift binary built from
       modules/services/screen-lock-monitor that watches macOS lock/unlock events
+      and flips BetterDisplay's main monitor. Requires
+      `mine.desktop.betterdisplay.enable`; the store path of `betterdisplaycli`
+      is compiled into the binary
     '';
   };
 

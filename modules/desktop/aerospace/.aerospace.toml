@@ -142,6 +142,11 @@ ctrl-0 = 'workspace 10'
 # ctrl-y = 'workspace Y'
 # ctrl-z = 'workspace Z'
 
+# `workspace-to-next-monitor` below is written as a bare name on purpose:
+# aerospace.nix substitutes the store path of the package in before handing
+# these bindings to nix-darwin. `exec-and-forget` does not run through a login
+# shell, so a bare name would not otherwise resolve (#21).
+#
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
 ctrl-shift-1 = 'move-node-to-workspace 1'
 ctrl-shift-2 = 'move-node-to-workspace 2'
@@ -153,16 +158,16 @@ ctrl-shift-7 = 'move-node-to-workspace 7'
 ctrl-shift-8 = 'move-node-to-workspace 8'
 ctrl-shift-9 = 'move-node-to-workspace 9'
 ctrl-shift-0 = 'move-node-to-workspace 10'
-ctrl-shift-alt-1 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 1'
-ctrl-shift-alt-2 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 2'
-ctrl-shift-alt-3 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 3'
-ctrl-shift-alt-4 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 4'
-ctrl-shift-alt-5 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 5'
-ctrl-shift-alt-6 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 6'
-ctrl-shift-alt-7 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 7'
-ctrl-shift-alt-8 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 8'
-ctrl-shift-alt-9 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 9'
-ctrl-shift-alt-0 = 'exec-and-forget /usr/local/bin/workspace-to-next-monitor 10'
+ctrl-shift-alt-1 = 'exec-and-forget workspace-to-next-monitor 1'
+ctrl-shift-alt-2 = 'exec-and-forget workspace-to-next-monitor 2'
+ctrl-shift-alt-3 = 'exec-and-forget workspace-to-next-monitor 3'
+ctrl-shift-alt-4 = 'exec-and-forget workspace-to-next-monitor 4'
+ctrl-shift-alt-5 = 'exec-and-forget workspace-to-next-monitor 5'
+ctrl-shift-alt-6 = 'exec-and-forget workspace-to-next-monitor 6'
+ctrl-shift-alt-7 = 'exec-and-forget workspace-to-next-monitor 7'
+ctrl-shift-alt-8 = 'exec-and-forget workspace-to-next-monitor 8'
+ctrl-shift-alt-9 = 'exec-and-forget workspace-to-next-monitor 9'
+ctrl-shift-alt-0 = 'exec-and-forget workspace-to-next-monitor 10'
 # ctrl-shift-a = 'move-node-to-workspace A'
 # ctrl-shift-b = 'move-node-to-workspace B'
 # ctrl-shift-c = 'move-node-to-workspace C'
