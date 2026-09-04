@@ -599,10 +599,27 @@ in
         # is `gcloud config set` at activation rather than a store symlink it
         # could not write to. Idempotent, and local: nothing here needs a
         # login. `wm-login` does the part that does.
+        # `gcloud config set core/project` looks the project up over the
+        # network with whatever credentials are on disk, and refreshes them
+        # first. With an expired token that is "cannot prompt during
+        # non-interactive execution", a non-zero exit, and nix-darwin's
+        # `set -e` activation dying one line before it links
+        # /run/current-system: the generation is built, home files are in
+        # place, and nothing new is on PATH. So: never load credentials for
+        # this (the lookup then merely warns, silenced by --verbosity=error),
+        # and do not call `set` at all when `get`, which is local, already
+        # answers what is wanted.
         home.activation.wemaintainGcloud = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           export CLOUDSDK_CORE_DISABLE_PROMPTS=1
-          $DRY_RUN_CMD ${pkgs.google-cloud-sdk}/bin/gcloud config set core/project ${lib.escapeShellArg cfg.gcp.project} --quiet >/dev/null
-          $DRY_RUN_CMD ${pkgs.google-cloud-sdk}/bin/gcloud config set core/account ${lib.escapeShellArg cfg.email} --quiet >/dev/null
+          export CLOUDSDK_AUTH_DISABLE_CREDENTIALS=true
+          gcloud=${pkgs.google-cloud-sdk}/bin/gcloud
+          set_if_differs() {
+            if [ "$("$gcloud" config get "$1" --verbosity=error 2>/dev/null || true)" != "$2" ]; then
+              $DRY_RUN_CMD "$gcloud" config set "$1" "$2" --quiet --verbosity=error >/dev/null
+            fi
+          }
+          set_if_differs core/project ${lib.escapeShellArg cfg.gcp.project}
+          set_if_differs core/account ${lib.escapeShellArg cfg.email}
         '';
       })
     ];
