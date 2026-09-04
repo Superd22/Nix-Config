@@ -39,6 +39,32 @@ Not in the bundle, on purpose:
 - `~/.ssh/self_deployment`: a deploy key referenced nowhere in this config.
   Revoke it when the old Mac is retired unless you know what it deploys.
 
+## The short way: `bootstrap.sh`
+
+Steps 2 to 8 below are what `bootstrap.sh` and the `init` wizard do. On the
+new Mac, once the bundle from step 1 is on it:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Superd22/Nix-Config/main/bootstrap.sh | sh
+```
+
+The stub installs the Xcode command line tools and Determinate Nix, then
+hands over to `nix run github:Superd22/Nix-Config#init`, which is
+`apps/init.sh`: it clones the config, settles the hostname (rename the Mac
+after an existing host, or add `hosts/<name>` as a copy of one), runs
+`keys import` on the bundle you pick, `keys doctor`, `build-switch`, and
+prints the list from step 8. It stops at the first thing that fails and
+never touches the old Mac. Re-running it is safe: an existing clone is
+reused and keys already in place are left alone.
+
+Every prompt can be answered from the environment (`INIT_HOSTNAME`,
+`INIT_BUNDLE`, `INIT_DEST`, `INIT_YES=1` or `--yes`, `INIT_SKIP_BUILD=1`),
+which is how CI runs it without a terminal. `nix run .#init -- --help` lists
+them.
+
+The rest of this document is the same procedure by hand, and what to do when
+a step fails.
+
 ## Migrating
 
 ### 1. On the old Mac: export
