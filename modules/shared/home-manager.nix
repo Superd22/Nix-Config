@@ -427,10 +427,7 @@ let name = "David";
           family = "MesloLGS NF";
           style = "Regular";
         };
-        size = lib.mkMerge [
-          (lib.mkIf pkgs.stdenv.hostPlatform.isLinux 10)
-          (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin 14)
-        ];
+        size = 14;
       };
 
       dynamic_padding = true;
@@ -476,12 +473,7 @@ let name = "David";
     enable = true;
     enableDefaultConfig = false;
     includes = [
-      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux
-        "/home/${user}/.ssh/config_external"
-      )
-      (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
-        "/Users/${user}/.ssh/config_external"
-      )
+      "/Users/${user}/.ssh/config_external"
     ];
     # Upstream OpenSSH directive names — `matchBlocks` (and its camelCase
     # aliases / `extraOptions` escape hatch) is deprecated.
@@ -492,12 +484,7 @@ let name = "David";
       "github.com" = {
         IdentitiesOnly = true;
         IdentityFile = [
-          (
-            if pkgs.stdenv.hostPlatform.isDarwin then
-              "/Users/${user}/.ssh/id_rsa"
-            else
-              "/home/${user}/.ssh/id_rsa"
-          )
+          "/Users/${user}/.ssh/id_rsa"
         ];
       };
     };

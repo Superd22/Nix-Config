@@ -31,21 +31,15 @@
       url = "github:openfga/homebrew-tap";
       flake = false;
     };
-    disko = {
-      url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     secrets = {
       url = "git+ssh://git@github.com/superd22/nix-secrets?ref=main";
       flake = false;
     };
   };
-  outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, openfgaTap, home-manager, nixpkgs, disko, agenix, secrets } @inputs:
+  outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, openfgaTap, home-manager, nixpkgs, agenix, secrets } @inputs:
     let
       user = "david";
-      linuxSystems = [ "x86_64-linux" "aarch64-linux" ];
-      darwinSystems = [ "aarch64-darwin" "x86_64-darwin" ];
-      forAllSystems = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) f;
+      system = "aarch64-darwin";
       devShell = system: let pkgs = nixpkgs.legacyPackages.${system}; in {
         default = with pkgs; mkShell {
           nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey ];
@@ -63,15 +57,6 @@
           exec ${self}/apps/${system}/${scriptName}
         '')}/bin/${scriptName}";
       };
-      mkLinuxApps = system: {
-        "apply" = mkApp "apply" system;
-        "build-switch" = mkApp "build-switch" system;
-        "copy-keys" = mkApp "copy-keys" system;
-        "create-keys" = mkApp "create-keys" system;
-        "check-keys" = mkApp "check-keys" system;
-        "install" = mkApp "install" system;
-        "install-with-secrets" = mkApp "install-with-secrets" system;
-      };
       mkDarwinApps = system: {
         "apply" = mkApp "apply" system;
         "build" = mkApp "build" system;
@@ -83,50 +68,32 @@
       };
     in
     {
-      devShells = forAllSystems devShell;
-      apps = nixpkgs.lib.genAttrs linuxSystems mkLinuxApps // nixpkgs.lib.genAttrs darwinSystems mkDarwinApps;
+      devShells.${system} = devShell system;
+      apps.${system} = mkDarwinApps system;
 
-      darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (system:
-        darwin.lib.darwinSystem {
-          inherit system;
-          specialArgs = inputs;
-          modules = [
-            home-manager.darwinModules.home-manager
-            nix-homebrew.darwinModules.nix-homebrew
-            {
-              nix-homebrew = {
-                inherit user;
-                enable = true;
-                taps = {
-                  "homebrew/homebrew-core" = homebrew-core;
-                  "homebrew/homebrew-cask" = homebrew-cask;
-                  "homebrew/homebrew-bundle" = homebrew-bundle;
-                  "deskflow/homebrew-deskflow" = deskflowHomebrewTap;
-                  "openfga/homebrew-openfga" = openfgaTap;
-                };
-                mutableTaps = false;
-                autoMigrate = true;
-              };
-            }
-            ./hosts/darwin
-          ];
-        }
-      );
-
-      nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system: nixpkgs.lib.nixosSystem {
+      darwinConfigurations.${system} = darwin.lib.darwinSystem {
         inherit system;
         specialArgs = inputs;
         modules = [
-          disko.nixosModules.disko
-          home-manager.nixosModules.home-manager {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              users.${user} = import ./modules/nixos/home-manager.nix;
+          home-manager.darwinModules.home-manager
+          nix-homebrew.darwinModules.nix-homebrew
+          {
+            nix-homebrew = {
+              inherit user;
+              enable = true;
+              taps = {
+                "homebrew/homebrew-core" = homebrew-core;
+                "homebrew/homebrew-cask" = homebrew-cask;
+                "homebrew/homebrew-bundle" = homebrew-bundle;
+                "deskflow/homebrew-deskflow" = deskflowHomebrewTap;
+                "openfga/homebrew-openfga" = openfgaTap;
+              };
+              mutableTaps = false;
+              autoMigrate = true;
             };
           }
-          ./hosts/nixos
+          ./hosts/darwin
         ];
-     });
+      };
   };
 }
