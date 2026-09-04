@@ -1,7 +1,7 @@
 { config, pkgs, lib, home-manager, ... }:
 
 let
-  user = "david";
+  user = config.mine.user.name;
   # Define the content of your file as a derivation
 
   homeFiles = import ./files.nix { inherit config pkgs; };
@@ -23,7 +23,9 @@ in
   # Enable home-manager
   home-manager = {
     useGlobalPkgs = true;
-    users.${user} = { pkgs, config, lib, ... }:{
+    users.${user} = { pkgs, config, lib, ... }: {
+      imports = [ ./programs.nix ];
+
       home = {
         enableNixpkgsReleaseCheck = false;
         packages = pkgs.callPackage ./home-packages.nix {};
@@ -31,7 +33,6 @@ in
 
         stateVersion = "23.11";
       };
-      programs = {} // import ./programs.nix { inherit config pkgs lib; };
 
       # Marked broken Oct 20, 2022 check later to remove this
       # https://github.com/nix-community/home-manager/issues/3344
