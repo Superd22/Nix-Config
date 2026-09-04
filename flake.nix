@@ -42,7 +42,9 @@
       pkgs = nixpkgs.legacyPackages.${system};
       devShell = {
         default = with pkgs; mkShell {
-          nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey ];
+          # gum is here for running apps/init.sh from source (the CI smoke test
+          # does, with stubs in front of it on PATH) and for recording it.
+          nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey gum ];
           shellHook = with pkgs; ''
             export EDITOR=vim
           '';
@@ -51,19 +53,29 @@
       # writeShellApplication runs shellcheck at build time and pins the
       # runtime dependencies, so the scripts are checked rather than just
       # executed out of the source tree.
+      #
+      # gitMinimal, not git: the full package pulls python3 and with it the
+      # Apple SDK, 1.5 GiB of closure that `nix run github:...#init` would
+      # download onto a factory Mac. Clone, commit and push over https and
+      # ssh are all the scripts ask of it, and gitMinimal has them.
       mkScript = name: extraInputs: pkgs.writeShellApplication {
         inherit name;
-        runtimeInputs = with pkgs; [ coreutils git ] ++ extraInputs;
+        runtimeInputs = with pkgs; [ coreutils gitMinimal ] ++ extraInputs;
         text = builtins.readFile (./apps + "/${name}.sh");
       };
-      scripts = nixpkgs.lib.mapAttrs mkScript {
-        build = [ ];
-        build-switch = [ ];
-        rollback = [ ];
+      scripts = rec {
+        build = mkScript "build" [ ];
+        build-switch = mkScript "build-switch" [ ];
+        rollback = mkScript "rollback" [ ];
         # Moves the three irreplaceable keys between machines; see
         # apps/keys.sh and docs/new-machine.md. `nix` itself is deliberately
         # not pinned here: the one on PATH is the Determinate install.
-        keys = with pkgs; [ age gnupg gnutar gzip openssh ];
+        keys = mkScript "keys" (with pkgs; [ age gnupg gnutar gzip openssh ]);
+        # The new-Mac wizard (#5), reached from bootstrap.sh. gum draws the
+        # prompts (15 MiB, one dependency); keys and build-switch are the
+        # same builds as `nix run .#keys` / `.#build-switch`, not re-evaluated
+        # through a second flake call.
+        init = mkScript "init" (with pkgs; [ gum findutils openssh keys build-switch ]);
       };
       # Every directory under hosts/ except the shared `common/` is a machine,
       # named after its hostname so `hostname -s` picks the right one.
