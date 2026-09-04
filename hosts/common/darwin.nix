@@ -7,6 +7,8 @@
     ../../modules/secrets.nix
     ../../modules/home-manager.nix
     ../../modules/services
+    # Employer-specific units (#8), each behind its own `mine.work.<name>.enable`.
+    ../../modules/work
     ../../modules/nixpkgs.nix
      agenix.darwinModules.default
   ];
@@ -41,27 +43,8 @@
     agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
   ] ++ (import ../../modules/packages.nix { inherit pkgs; });
 
-  # /etc/zshenv is fought over by two other tools:
-  #   - tech.bastion.aiproxy appends its HTTPS_PROXY / NODE_EXTRA_CA_CERTS exports
-  #   - the Determinate installer prepends its "set up Nix on SSH" block
-  # Either one replaces nix-darwin's symlink with a regular file, and etcChecks
-  # then aborts the whole activation with "Unexpected files in /etc".
-  #
-  # Both tools also write to /etc/zshenv.local, which nix-darwin sources on every
-  # shell and never manages, so the copy in /etc/zshenv is pure duplication and
-  # nothing is lost by resetting it. Scoped to this one file on purpose — a
-  # general /etc auto-heal would silently discard changes that aren't mirrored
-  # anywhere. The .drifted copy is kept for inspection.
-  #
-  # preActivation runs before etcChecks (see nix-darwin's activation-scripts.nix).
-  # Belongs in a WeMaintain-specific module once #8 lands, since aiproxy is a
-  # work tool rather than something every fork of this repo wants.
-  system.activationScripts.preActivation.text = ''
-    if [ -e /etc/zshenv ] && [ "$(readlink /etc/zshenv)" != "/etc/static/zshenv" ]; then
-      echo "[nix-darwin] /etc/zshenv drifted, moving it to /etc/zshenv.drifted" >&2
-      mv -f /etc/zshenv /etc/zshenv.drifted
-    fi
-  '';
+  # The /etc/zshenv drift fix-up that used to be here moved to
+  # modules/work/wemaintain (#8): the tool that causes the drift is a work one.
 
   system = {
     stateVersion = 4;

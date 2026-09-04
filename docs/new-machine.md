@@ -166,9 +166,12 @@ casks the host lists in `mine.homebrew`. Restart the terminal afterwards.
 - **Raycast.** `modules/config/raycast/` holds the scripts and quicklinks, but
   Raycast has to be pointed at that directory once, and its own settings need
   importing from a Raycast export.
-- **AWS SSO.** `~/.aws/config` and `rds-ca-cert.pem` are not in this repo yet
-  (#8). Copy `~/.aws/` from the old Mac, then `aws sso login --profile
-  prod:back` etc. before `withPg` works.
+- **Cloud logins.** With `mine.work.wemaintain.enable` on, `~/.aws/config`,
+  the RDS CA bundle and the gcloud project are all in place after
+  `build-switch`; nothing is copied from the old Mac. What is left is the
+  browser: run `wm-login` once, and again whenever `withPg` starts failing
+  with an SSO error. If the machine had a hand-written `~/.aws/config`, it
+  is at `~/.aws/config.before-nix`.
 - **Monitor names.** The aerospace/betterdisplay scripts address displays by
   the literal names `Left` and `Right`. Rename them in BetterDisplay to match,
   or the ultra-wide Raycast scripts silently do nothing.

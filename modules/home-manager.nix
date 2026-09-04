@@ -26,6 +26,12 @@ in
   # Enable home-manager
   home-manager = {
     useGlobalPkgs = true;
+    # When a module starts managing a file that already exists in the home
+    # directory — ~/.aws/config on a machine that had one by hand before #8 —
+    # home-manager refuses to clobber it and aborts the whole activation.
+    # Moving the original aside instead, under the same suffix the datagrip
+    # module uses, keeps a fresh enable from being a manual clean-up first.
+    backupFileExtension = "before-nix";
     users.${user} = { pkgs, config, lib, ... }: {
       imports = [ ./programs ];
 

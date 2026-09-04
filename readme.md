@@ -20,4 +20,4 @@ runs the whole thing as a wizard (`bootstrap.sh`, then `nix run .#init`).
 # todo
 - [ ] auto zerotier
 - [ ] auto pritnul
-- [ ] auto aws config
+- [x] auto aws config (`mine.work.wemaintain`, #8)
