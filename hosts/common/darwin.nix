@@ -61,6 +61,10 @@
         InitialKeyRepeat = 15;
 
         "com.apple.mouse.tapBehavior" = 1;
+
+        # Classic scrolling: scroll up moves the view up (macOS "Natural" off)
+        "com.apple.swipescrolldirection" = false;
+
         "com.apple.sound.beep.volume" = 0.0;
         "com.apple.sound.beep.feedback" = 0;
       };
