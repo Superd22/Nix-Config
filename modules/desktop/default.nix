@@ -1,7 +1,9 @@
-_ : {
+{ ... }:
+{
   imports = [
     ./aerospace/aerospace.nix
-    ./screen-lock-monitor
+    ./betterdisplay
+    ./dock.nix
     ./sketchybar/sketchybar.nix
   ];
 }

@@ -5,10 +5,10 @@ let user = "david"; in
 {
 
   imports = [
-    ../../modules/darwin/secrets.nix
-    ../../modules/darwin/home-manager.nix
-    ../../modules/darwin/services
-    ../../modules/shared
+    ../../modules/secrets.nix
+    ../../modules/home-manager.nix
+    ../../modules/services
+    ../../modules/nixpkgs.nix
      agenix.darwinModules.default
   ];
 
@@ -40,7 +40,7 @@ let user = "david"; in
   # Load configuration that is shared across systems
   environment.systemPackages = with pkgs; [
     agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
-  ] ++ (import ../../modules/shared/packages.nix { inherit pkgs; });
+  ] ++ (import ../../modules/packages.nix { inherit pkgs; });
 
   system = {
     stateVersion = 4;
