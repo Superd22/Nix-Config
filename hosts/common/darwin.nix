@@ -49,6 +49,27 @@
   system = {
     stateVersion = 4;
     primaryUser = config.mine.user.name;
+    # `defaults` below only writes the preferences; it does not tell the
+    # running session to re-read them. Most are picked up the next time
+    # whatever reads them starts, but the ones WindowServer and the HID stack
+    # cache at login — `com.apple.swipescrolldirection` being the one that
+    # bites — stay on their old value until you log out. So a freshly built Mac
+    # comes up scrolling the wrong way even though the pref on disk is already
+    # right.
+    #
+    # `activateSettings -u` is what System Settings itself calls to broadcast
+    # the change, so running it after activation makes `build-switch` take
+    # effect the way flipping the switch in the UI would.
+    #
+    # Activation runs as root, and the settings to broadcast are the login
+    # user's, so this drops into their GUI session the same way nix-darwin's
+    # own generated `defaults write` lines above it do.
+    activationScripts.activateSettings.text = ''
+      launchctl asuser "$(id -u -- ${config.mine.user.name})" \
+        sudo --user=${config.mine.user.name} -- \
+        /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+    '';
+
     defaults = {
       NSGlobalDomain = {
         AppleShowAllExtensions = true;

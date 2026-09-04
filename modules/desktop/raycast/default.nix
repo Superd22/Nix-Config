@@ -64,6 +64,26 @@ in
     system.defaults.CustomUserPreferences."com.raycast.macos".raycastGlobalHotkey =
       "Control-2";
 
+    # ...and something to actually start it. The hotkey above is inert while
+    # Raycast is not running, and a machine built from this repo has no reason
+    # to ever launch it: the cask only drops the bundle in /Applications, and
+    # Raycast's own "launch at login" is a login item it writes for itself the
+    # first time you open it by hand. Until then Control-D falls through to
+    # whatever macOS does with it, which is what a fresh Mac looks like (#9).
+    #
+    # `open -a` rather than running the binary directly: Raycast is an app
+    # bundle and expects to be launched as one, and `open` is a no-op if it is
+    # already up. RunAtLoad with no KeepAlive because launchd's job here is to
+    # start it once per login, not to supervise it — Raycast restarting itself
+    # after an update should not be fought over.
+    launchd.user.agents.raycast = {
+      serviceConfig = {
+        Label = "com.${user}.raycast";
+        ProgramArguments = [ "/usr/bin/open" "-a" "Raycast" ];
+        RunAtLoad = true;
+      };
+    };
+
     # The ultra-wide script commands are 17 calls to `betterdisplaycli` and
     # nothing else would drive the PiP layout they set up, so raycast without
     # betterdisplay is a half-configured machine rather than a smaller one.
