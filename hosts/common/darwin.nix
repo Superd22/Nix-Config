@@ -5,6 +5,7 @@ let user = "david"; in
 {
 
   imports = [
+    ../../modules/options.nix
     ../../modules/secrets.nix
     ../../modules/home-manager.nix
     ../../modules/services
