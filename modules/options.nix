@@ -154,6 +154,20 @@
     '';
   };
 
+  # Work (#8). The one "profile" this repo has, built concretely: a team
+  # standardising its dev environment is the case where everyone should get
+  # the improvements. The schema (profiles, databases, gcloud project) lives in
+  # modules/work/wemaintain, where it is used; only the flag is here.
+  options.mine.work = {
+    wemaintain.enable = lib.mkEnableOption ''
+      WeMaintain's cloud environments: `~/.aws/config` with the SSO profiles,
+      the RDS CA bundle, the `withPg`/`withPgProd` IAM-auth helpers, the
+      matching DataGrip datasources, gcloud pointed at the data project, and
+      `wm-login` for the browser logins nix cannot do. Requires
+      `mine.work.wemaintain.email`
+    '';
+  };
+
   # Off by default: the secrets module interpolates the `secrets` flake input,
   # which is a private repo. Anything that forces it needs SSH access nobody
   # but its owner has, so a host has to opt in explicitly (#17).
