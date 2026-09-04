@@ -4,11 +4,15 @@
 # so `nix run .#build-switch` picks this host with no argument.
 #
 # hosts/common/darwin.nix is composed in by flake.nix; this file holds only
-# what is specific to this machine. That is currently nothing: the user name,
-# the package lists and the work-specific bits are still hardcoded in modules/,
-# and move here as the options schema (#2), the enable flags (#3) and the
-# package lists (#9) land.
+# what is specific to this machine: currently the identity that used to be
+# duplicated as `let user = "david"` across five module files (#2). The enable
+# flags (#3) and the package lists (#9) move here as those issues land.
 { ... }:
 
 {
+  mine.user = {
+    name = "david";
+    fullName = "David";
+    email = "superd001@gmail.com";
+  };
 }
