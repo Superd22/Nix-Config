@@ -135,8 +135,9 @@ casks the host lists in `mine.homebrew`. Restart the terminal afterwards.
 
 ### 8. Things nix does not do for you
 
-- **App logins.** Docker Desktop, Slack, Spotify, Steam, NordVPN, Pritunl,
-  ZeroTier, Parsec, 1Password: all manual.
+- **App logins.** Docker Desktop, Slack, Spotify, Steam, NordVPN, ZeroTier,
+  Parsec, 1Password: all manual. Pritunl is not in that list — `wm-login`
+  covers it, below.
 - **Raycast.** `modules/config/raycast/` holds the scripts and quicklinks, but
   Raycast has to be pointed at that directory once, and its own settings need
   importing from a Raycast export.
@@ -146,6 +147,12 @@ casks the host lists in `mine.homebrew`. Restart the terminal afterwards.
   browser: run `wm-login` once, and again whenever `withPg` starts failing
   with an SSO error. If the machine had a hand-written `~/.aws/config`, it
   is at `~/.aws/config.before-nix`.
+- **The VPN.** Part of that same `wm-login`: it opens
+  <https://vpn.wemaintain.io/login>, and a profile minted there — the copied
+  link, or the downloaded `.tar`, which it offers by default if it is fresh in
+  `~/Downloads` — is registered with the Pritunl client. Nothing comes from the
+  old Mac; the profile is per machine. Connect it from the Pritunl app once it
+  is added. Already have a profile, the step does nothing.
 - **Monitor names.** The aerospace/betterdisplay scripts address displays by
   the literal names `Left` and `Right`. Rename them in BetterDisplay to match,
   or the ultra-wide Raycast scripts silently do nothing.
@@ -161,8 +168,10 @@ or re-keyed in `nix-secrets`. The old disk simply has to stop existing:
 
 1. Confirm the bundle's backup copy is where you put it in step 1.
 2. Revoke what was per-machine: `~/.ssh/self_deployment` if unused, the GitHub
-   App key under `~/wmtn/` (regenerable from the App's settings), and AWS SSO
-   sessions (`aws sso logout`).
+   App key under `~/wmtn/` (regenerable from the App's settings), AWS SSO
+   sessions (`aws sso logout`), and the old Mac's VPN profile on
+   <https://vpn.wemaintain.io> — the new Mac minted its own, and the old one
+   stays valid until it is deleted there.
 3. Sign out of iCloud, then System Settings > General > Transfer or Reset >
    Erase All Content and Settings. FileVault is on, so this is a cryptographic
    erase.
