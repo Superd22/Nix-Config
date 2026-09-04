@@ -2,3 +2,8 @@ result
 docs
 .serena
 .vscode
+
+# JetBrains project dirs. DataGrip recreates one wherever it has a project
+# open, which is how modules/config/datagrip and modules/darwin/home/datagrip
+# ended up in this repo. Datasources are declared in nix now (#7).
+.idea/
