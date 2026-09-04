@@ -60,9 +60,10 @@
     '';
 
     betterdisplay.enable = lib.mkEnableOption ''
-      the BetterDisplay helper scripts: a `betterdisplaycli` shim and
-      `workspace-to-next-monitor`, both installed into /usr/local/bin by an
-      activation script. Needs the `betterdisplay` cask, which is currently
+      the BetterDisplay helper scripts: a `betterdisplaycli` shim, and
+      `workspace-to-next-monitor`, which is a package on PATH and also shimmed
+      into /usr/local/bin because the .aerospace.toml keybindings call it by
+      absolute path (#21). Needs the `betterdisplay` cask, which is currently
       listed in modules/homebrew.nix (#9 moves that here)
     '';
 
@@ -71,6 +72,14 @@
       populated from `local.dock.entries` or stripped entirely, depending on
       `local.dock.enable`. When off, this config does not touch the Dock at all,
       which is what you want on a machine whose Dock someone else arranged
+    '';
+
+    raycast.enable = lib.mkEnableOption ''
+      the Raycast script commands from modules/config/raycast, rendered into
+      ~/.config/raycast/scripts. Raycast still has to be pointed at that
+      directory by hand, once — see that directory's readme. The ultra-wide
+      scripts also drive `betterdisplaycli`, so they want
+      `mine.desktop.betterdisplay.enable` as well (#21)
     '';
   };
 

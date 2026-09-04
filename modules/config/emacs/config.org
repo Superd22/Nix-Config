@@ -82,10 +82,13 @@ This associates our package manager with the right source (MELPA).
     "Return true if system is GNU/Linux-based"
     (string-equal system-type "gnu/linux"))
 
-  ;; Set path for darwin
+  ;; Set path for darwin. The home-relative entries are expanded at startup so
+  ;; this follows whoever is logged in rather than one hardcoded account.
   (when (system-is-mac)
-    (setenv "PATH" (concat (getenv "PATH") ":/Users/david/.nix-profile/bin:/usr/bin"))
-    (setq exec-path (append '("/Users/david/bin" "/profile/bin" "/Users/david/.npm-packages/bin" "/Users/david/.nix-profile/bin" "/nix/var/nix/profiles/default/bin" "/usr/local/bin" "/usr/bin") exec-path)))
+    (setenv "PATH" (concat (getenv "PATH") ":" (expand-file-name "~/.nix-profile/bin") ":/usr/bin"))
+    (setq exec-path (append (mapcar #'expand-file-name
+                                    '("~/bin" "/profile/bin" "~/.npm-packages/bin" "~/.nix-profile/bin" "/nix/var/nix/profiles/default/bin" "/usr/local/bin" "/usr/bin"))
+                            exec-path)))
 #+END_SRC
 
 *** Counsel/Ivy framework
