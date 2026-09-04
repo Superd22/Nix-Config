@@ -382,9 +382,9 @@ checklist() {
   step "6 · Not nix's job" "see $DOCS, 'Things nix does not do for you'"
   gum format <<'MD'
 - **Open a new terminal.** The one you are in predates the switch.
-- **App logins**: Docker Desktop, Slack, Spotify, Steam, NordVPN, Pritunl, ZeroTier, Parsec, 1Password.
+- **App logins**: Docker Desktop, Slack, Spotify, Steam, NordVPN, ZeroTier, Parsec, 1Password. Not Pritunl: `wm-login` mints its profile.
 - **Raycast**: point it at `modules/config/raycast/`, import its settings export.
-- **Cloud logins**: `~/.aws/config`, the RDS CA bundle and the gcloud project are in place; run `wm-login` once for the browser half, and again when `withPg` fails with an SSO error. A hand-written `~/.aws/config` is at `~/.aws/config.before-nix`.
+- **Cloud logins**: `~/.aws/config`, the RDS CA bundle and the gcloud project are in place; run `wm-login` once for the browser half — AWS, Google and the Pritunl VPN profile — and again when `withPg` fails with an SSO error. A hand-written `~/.aws/config` is at `~/.aws/config.before-nix`.
 - **Monitor names**: rename them `Left` and `Right` in BetterDisplay.
 - **macOS permissions**: Accessibility for aerospace, Screen Recording for the lock monitor and OBS.
 - **The old Mac**: only now, and only after the bundle has a second copy somewhere safe. Section 9 of the doc.
