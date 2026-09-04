@@ -93,7 +93,8 @@
       "zed"
       "openlens"
       "warp"
-
+      "claude-code"
+      "claude"
       # Communication
       "discord"
       "signal"
