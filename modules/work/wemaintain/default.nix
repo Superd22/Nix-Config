@@ -1,15 +1,17 @@
 # WeMaintain's cloud environments (#8): AWS SSO profiles, the RDS IAM database
-# helpers, the DataGrip datasources for the same databases, and gcloud.
+# helpers, the DataGrip datasources for the same databases, gcloud, and the
+# Pritunl VPN (#32).
 #
 # Everything a WeMaintain developer needs to reach the cloud from a fresh Mac,
 # behind one flag. Turn on `mine.work.wemaintain.enable`, build-switch, run
 # `wm-login`, and `withPg <anything>` works. No copying ~/.aws from the old
-# machine.
+# machine, and no VPN profile carried over either: it is minted per Mac from
+# the server, and the old machine's is revoked when that machine is retired.
 #
 # This is a nix-darwin module, for the same reason modules/programs/datagrip is:
-# it owns system packages (the CLIs), files in the home directory (~/.aws), and
-# a pre-activation fix-up for a work-installed tool, and all of those belong to
-# the same "I work at WeMaintain" switch.
+# it owns system packages (the CLIs), a cask, files in the home directory
+# (~/.aws), and a pre-activation fix-up for a work-installed tool, and all of
+# those belong to the same "I work at WeMaintain" switch.
 #
 #
 # SINGLE SOURCE OF TRUTH
@@ -113,18 +115,92 @@ let
 
   shellDatabases = lib.filter (db: db.shellFunction != null) (lib.attrValues cfg.databases);
 
-  # The one interactive step nix cannot do: the browser logins. Both SSO tokens
-  # expire (AWS after hours, Google after days), so this is also what to run
+  # The one interactive step nix cannot do: the browser logins. Every one of
+  # them is gated by a consent screen no CLI can drive — AWS and Google because
+  # the SSO tokens expire (after hours and after days respectively), Pritunl
+  # because minting a profile is a WeMaintain SSO login on the server's own web
+  # UI. So this is both the one command to run on a new Mac and what to run
   # when `withPg` starts failing with an SSO error.
+  #
+  # The VPN step is the odd one out in being once-per-machine rather than
+  # per-expiry: it is a no-op the moment a profile exists, so `wm-login` with no
+  # argument stays the right thing to type either way (#32).
   wm-login = pkgs.writeShellApplication {
     name = "wm-login";
-    runtimeInputs = [ pkgs.awscli2 ] ++ lib.optional cfg.gcp.enable pkgs.google-cloud-sdk;
+    runtimeInputs = [ pkgs.awscli2 ]
+      ++ lib.optional cfg.gcp.enable pkgs.google-cloud-sdk
+      ++ lib.optional cfg.vpn.enable pkgs.jq;
     text = ''
       what=''${1:-all}
       case "$what" in
-        aws|gcp|all) ;;
-        *) echo "usage: wm-login [aws|gcp|all]" >&2; exit 2 ;;
+        aws|gcp|${lib.optionalString cfg.vpn.enable "vpn|"}all) ;;
+        *) echo "usage: wm-login [aws|gcp|${lib.optionalString cfg.vpn.enable "vpn|"}all]" >&2; exit 2 ;;
       esac
+
+      ${lib.optionalString cfg.vpn.enable ''
+        # The Pritunl CLI ships inside the cask's app bundle and is deliberately
+        # not on PATH, so it is addressed by its full path.
+        pritunl_client=/Applications/Pritunl.app/Contents/Resources/pritunl-client
+        pritunl_profiles="$HOME/Library/Application Support/pritunl/profiles"
+
+        vpn_profile() {
+          if [ ! -x "$pritunl_client" ]; then
+            echo "    Pritunl is not installed; run 'nix run .#build-switch' first." >&2
+            return 1
+          fi
+
+          # `pritunl-client list` is NOT the check, despite being the obvious
+          # one: on the electron client (1.3.4686) it prints an empty table even
+          # with a profile added and a tunnel up, because it asks the service
+          # rather than reading the app's own store. These files are that store.
+          local existing
+          existing=$(find "$pritunl_profiles" -maxdepth 1 -name '*.conf' 2>/dev/null | sort)
+          if [ -n "$existing" ]; then
+            echo "    a profile is already on this Mac, nothing to mint:"
+            while IFS= read -r conf; do
+              echo "      $(basename "$conf" .conf)  $(jq -r '"\(.organization) / \(.server) / \(.user)"' "$conf")"
+            done <<< "$existing"
+            # Only when asked for the VPN by name: as part of `wm-login all`,
+            # run every time an SSO token expires, this would just be noise.
+            if [ "$what" = vpn ]; then
+              echo "    to replace it, delete it in the Pritunl app and run 'wm-login vpn' again."
+            fi
+            return 0
+          fi
+
+          echo "    log in with WeMaintain SSO, then either copy the profile link"
+          echo "    or download the .tar. Opening the browser."
+          /usr/bin/open ${lib.escapeShellArg cfg.vpn.url} || true
+
+          # Both forms the server hands out are accepted verbatim:
+          # `pritunl-client add [profile_uri|tar_path]`. A .tar that landed in
+          # ~/Downloads while this was running is almost certainly the one, so
+          # it is offered as the default rather than asking for a path to type.
+          local recent="" answer=""
+          recent=$(find "$HOME/Downloads" -maxdepth 1 -name '*.tar' -mmin -30 \
+            -exec stat -f '%m %N' {} + 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+
+          echo
+          if [ -n "$recent" ]; then
+            read -r -p "    profile URI or .tar [$recent]: " answer || answer=""
+            [ -n "$answer" ] || answer="$recent"
+          else
+            read -r -p "    profile URI or .tar: " answer || answer=""
+          fi
+
+          if [ -z "$answer" ]; then
+            echo "    nothing given; run 'wm-login vpn' once you have the profile." >&2
+            return 0
+          fi
+
+          if ! "$pritunl_client" add "$answer"; then
+            echo "    'pritunl-client add' failed. Open Pritunl.app once so its" >&2
+            echo "    service is running, then run 'wm-login vpn' again." >&2
+            return 1
+          fi
+          echo "    added. Connect it from the Pritunl app."
+        }
+      ''}
 
       if [ "$what" = aws ] || [ "$what" = all ]; then
         # The [default] section of ~/.aws/config carries the SSO portal and
@@ -141,6 +217,13 @@ let
           # opposed to the gcloud CLI itself. A separate consent screen.
           gcloud auth application-default login
           gcloud auth application-default set-quota-project ${lib.escapeShellArg cfg.gcp.project}
+        fi
+      ''}
+
+      ${lib.optionalString cfg.vpn.enable ''
+        if [ "$what" = vpn ] || [ "$what" = all ]; then
+          echo "==> Pritunl VPN (${cfg.vpn.url})"
+          vpn_profile
         fi
       ''}
     '';
@@ -318,6 +401,27 @@ in
         description = "Default gcloud project, and the ADC quota project.";
       };
     };
+
+    vpn = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Install the Pritunl cask and give `wm-login` a `vpn` step that mints
+          this Mac's VPN profile from the server below.
+        '';
+      };
+
+      url = lib.mkOption {
+        type = lib.types.str;
+        default = "https://vpn.wemaintain.io/login";
+        description = ''
+          The Pritunl server's login page, opened in the browser by
+          `wm-login vpn`. It is behind WeMaintain SSO, which is why the profile
+          cannot be minted from the CLI.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -432,6 +536,13 @@ in
       [ wm-login ]
       ++ lib.optional cfg.aws.enable pkgs.awscli2
       ++ lib.optional cfg.gcp.enable pkgs.google-cloud-sdk;
+
+    # The cask, not as a preference but as this module's implementation, the way
+    # modules/desktop/betterdisplay declares its own: `wm-login vpn` runs a
+    # binary inside /Applications/Pritunl.app. It used to be a bare entry in the
+    # host's cask list, where it looked like a personal choice; the VPN it
+    # reaches is a WeMaintain one, so it belongs behind this flag (#32).
+    homebrew.casks = lib.optional cfg.vpn.enable "pritunl";
 
     # DataGrip sees the same databases, if it is enabled at all. The datagrip
     # module ignores this when it is off, so nothing is gated here.
