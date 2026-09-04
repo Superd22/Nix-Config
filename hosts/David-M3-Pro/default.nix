@@ -5,9 +5,9 @@
 #
 # hosts/common/darwin.nix is composed in by flake.nix; this file holds only
 # what is specific to this machine: the identity that used to be duplicated as
-# `let user = "david"` across five module files (#2), and the enable flags that
-# used to be hardcoded inside the modules themselves (#3). The package lists
-# (#9) move here as that issue lands.
+# `let user = "david"` across five module files (#2), the enable flags that used
+# to be hardcoded inside the modules themselves (#3), and the Homebrew lists
+# that used to sit in modules/homebrew.nix (#9).
 { ... }:
 
 {
@@ -70,6 +70,63 @@
           url = "jdbc:postgresql://localhost:5432/postgres";
         };
       };
+  };
+
+  # Homebrew (#9). These used to be a flat list inside modules/homebrew.nix,
+  # which meant a fork of this repo got Steam, NordVPN and Autodesk Fusion
+  # whether it wanted them or not. Nothing here is a dependency of anything in
+  # modules/ — the casks that are (betterdisplay, raycast, datagrip) are
+  # declared by the modules that need them and follow the flags above.
+  mine.homebrew = {
+    brews = [
+      "git-secret"
+      "deno"
+      "fga"
+      "scrcpy"
+      "rust"
+      "httpie"
+      # Salesforce CLI. Was also listed as a cask, where the same tool ships
+      # under the token `salesforce-cli` and is disabled upstream since
+      # 2026-09-01 for failing Gatekeeper; the formula is the one that works.
+      "sf"
+    ];
+
+    casks = [
+      # Development
+      "docker-desktop"
+      "visual-studio-code"
+      "zed"
+      "openlens"
+      "warp"
+
+      # Communication
+      "discord"
+      "signal"
+
+      # Entertainment
+      "vlc"
+      "spotify"
+      "jellyfin-media-player"
+      "steam"
+      "obs"
+
+      # Browsers
+      "sigmaos"
+
+      # Networking
+      "zerotier-one"
+      "pritunl"
+      "nordvpn"
+
+      # 3D printing and CAD
+      "autodesk-fusion"
+      "orcaslicer"
+
+      # Screens and peripherals
+      "deskflow"
+      "parsec"
+      "camo-studio"
+    ];
   };
 
   mine.services."screen-lock-monitor".enable = true;

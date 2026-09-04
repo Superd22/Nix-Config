@@ -1,4 +1,16 @@
-_:
+# Homebrew: policy and wiring, and no package names.
+#
+# What lives here is the part every machine shares — Homebrew is on, and how it
+# behaves during an activation. *What* gets installed is a property of the
+# person or the machine, so it comes from `mine.homebrew.*` (declared in
+# modules/options.nix) and is set in hosts/<hostname> (#9).
+#
+# Modules add to these lists too, for the one case that is not taste: a module
+# that shells out to an app bundle needs that cask the way `services.foo.enable`
+# needs `pkgs.foo` upstream. `homebrew.casks` is a list option, so those
+# contributions merge with whatever the host asked for; see
+# modules/desktop/betterdisplay for the shape.
+{ config, ... }:
 {
   homebrew = {
     enable = true;
@@ -19,58 +31,6 @@ _:
       cleanup = "none";
     };
 
-    brews = [
-      "git-secret"
-      "deno"
-      "fga"
-      "scrcpy"
-      "rust"
-      "httpie"
-      "sf"
-    ];
-    casks = [
-      # Development Tools
-      "docker-desktop"
-      "visual-studio-code"
-      # datagrip is added by modules/programs/datagrip when
-      # `mine.programs.datagrip.enable` is on (#7), the shape #9 gives the rest.
-      "openlens"
-      "deskflow"
-      "signal"
-      "betterdisplay"
-      # Communication Tools
-      "discord"
-
-      # Entertainment Tools
-      "vlc"
-      "spotify"
-      "jellyfin-media-player"
-      "steam"
-      "obs"
-
-      # Editors
-      "zed"
-
-      # Terminal
-      "warp"
-      "sf"
-      "raycast"
-
-      # Browsers
-      "sigmaos"
-
-      # Networking
-      "zerotier-one"
-      "pritunl"
-
-      # 3D
-      "autodesk-fusion"
-      "orcaslicer"
-
-      "parsec"
-      "nordvpn"
-
-      "camo-studio"
-    ];
+    inherit (config.mine.homebrew) brews casks taps;
   };
 }

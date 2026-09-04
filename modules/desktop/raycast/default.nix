@@ -44,11 +44,15 @@ let
 in
 {
   config = lib.mkIf config.mine.desktop.raycast.enable {
+    # The app itself, for the same reason modules/desktop/betterdisplay declares
+    # its cask: script commands rendered into ~/.config/raycast/scripts do
+    # nothing at all without the thing that scans that directory (#9).
+    homebrew.casks = [ "raycast" ];
+
     # The ultra-wide script commands are 17 calls to `betterdisplaycli` and
     # nothing else would drive the PiP layout they set up, so raycast without
-    # betterdisplay is a half-configured machine rather than a smaller one. The
-    # flag is the closest thing this repo has to "BetterDisplay is installed";
-    # #9 will move the cask itself under the same flag.
+    # betterdisplay is a half-configured machine rather than a smaller one.
+    # betterdisplay is what pulls the cask that `betterdisplaycli` wraps.
     assertions = [
       {
         assertion = config.mine.desktop.betterdisplay.enable;
