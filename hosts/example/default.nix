@@ -32,19 +32,23 @@
     # Off. A status bar is a taste, not a default.
     sketchybar.enable = false;
 
-    # Off. The activation script writes to /usr/local/bin and still hardcodes a
-    # /Users/david path (#4); it also only makes sense with the BetterDisplay
-    # cask actually installed.
+    # Off. The activation script writes to /usr/local/bin, and none of it means
+    # anything without the BetterDisplay cask actually installed.
     betterdisplay.enable = false;
 
     # Off. With `local.dock.enable` false this would strip the Dock bare on
     # first activation, which is not something a fork should discover by
     # surprise.
     dock.enable = false;
+
+    # Off. The scripts here are for one specific ultra-wide monitor, and
+    # wiring them up needs a manual step in Raycast's settings anyway.
+    raycast.enable = false;
   };
 
-  # Off. A launchd agent labelled com.david.* watching lock events is not a
-  # generic want.
+  # Off. A launchd agent watching lock events is not a generic want. The label
+  # follows `mine.user.name` now (#4), so on this host it would be
+  # com.changeme.screen-lock-monitor rather than com.david.*.
   mine.services."screen-lock-monitor".enable = false;
 
   # `mine.secrets.enable` is deliberately left at its default (false): this host

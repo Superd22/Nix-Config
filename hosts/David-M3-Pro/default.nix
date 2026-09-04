@@ -36,6 +36,10 @@
     # On: this config manages the Dock. Which today means stripping it, since
     # `local.dock.enable` is false and the entries list is empty.
     dock.enable = true;
+
+    # The ultra-wide script commands. They drive betterdisplaycli, so this
+    # wants betterdisplay.enable above (#21).
+    raycast.enable = true;
   };
 
   mine.services."screen-lock-monitor".enable = true;

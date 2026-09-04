@@ -1,4 +1,6 @@
-{ pkgs, ... }:
+# Called by ../default.nix as a plain function, not evaluated as a module, so
+# the account name is passed in rather than read off `config`.
+{ pkgs, user }:
 
 let
   screenLockMonitor = pkgs.stdenv.mkDerivation {
@@ -24,7 +26,9 @@ in
 
   launchd.user.agents.screen-lock-monitor = {
     serviceConfig = {
-      Label = "com.david.screen-lock-monitor";
+      # Reverse-DNS label keyed on the account that owns the agent, so a fork
+      # does not end up running a job announced as david's.
+      Label = "com.${user}.screen-lock-monitor";
       ProgramArguments = [ "${screenLockMonitor}/bin/screen-lock-monitor" ];
       RunAtLoad = true;
       KeepAlive = true;

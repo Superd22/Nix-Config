@@ -1,4 +1,6 @@
-#!/bin/bash
+# Built by modules/desktop/raycast into ~/.config/raycast/scripts, which is
+# where the shebang and the PATH for `aerospace` / `betterdisplaycli` are
+# added; this file is not meant to run straight out of the working tree.
 
 
 # Required parameters:

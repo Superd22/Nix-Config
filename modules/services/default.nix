@@ -20,7 +20,10 @@
   imports = [
     {
       config = lib.mkIf config.mine.services."screen-lock-monitor".enable
-        (import ./screen-lock-monitor { inherit pkgs; });
+        (import ./screen-lock-monitor {
+          inherit pkgs;
+          user = config.mine.user.name;
+        });
     }
   ];
 }
