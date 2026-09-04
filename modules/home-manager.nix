@@ -24,7 +24,7 @@ in
   home-manager = {
     useGlobalPkgs = true;
     users.${user} = { pkgs, config, lib, ... }: {
-      imports = [ ./programs.nix ];
+      imports = [ ./programs ];
 
       home = {
         enableNixpkgsReleaseCheck = false;
