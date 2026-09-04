@@ -114,6 +114,23 @@ MD
   echo
 }
 
+# Where a bundle plausibly is: AirDrop lands in Downloads, Finder copies land
+# on the Desktop or in ~, and an external disk is a /Volumes child. Newest
+# first, because the freshest export is the one you just made.
+#
+# Not `gum file`: its picker under-renders on gum 2.x (neither the header nor
+# the first entry is drawn), so a Downloads holding only the bundle looks like
+# an empty list. A `gum choose` over these paths shows every candidate.
+find_bundles() {
+  local list
+  list="$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME" "$DEST" /Volumes/*/ \
+    -maxdepth 1 -name 'keys-*.age' 2>/dev/null | sort -u || true)"
+  [ -n "$list" ] || return 0
+  # `ls -t` and not `stat -f %m`: the devShell puts coreutils ahead of
+  # /usr/bin, where -f means something else entirely.
+  printf '%s\n' "$list" | tr '\n' '\0' | xargs -0 ls -td --
+}
+
 # What is already on this Mac, before anything is asked. A rerun after a
 # failure should read as "picking up where it stopped", not as a fresh start.
 situation() {
@@ -134,7 +151,7 @@ situation() {
     keys="only one of id_rsa / id_ed25519 is in $SSH_DIR; step 3 imports the bundle"
   fi
   local bundles
-  bundles="$(find "$HOME/Downloads" "$HOME/Desktop" "$HOME" -maxdepth 1 -name 'keys-*.age' 2>/dev/null | head -3 | tr '\n' ' ')"
+  bundles="$(find_bundles | head -3 | tr '\n' ' ')"
   gum style --border rounded --border-foreground "$ACCENT" --padding "0 2" \
     "$(gum style --bold --foreground "$ACCENT" 'Found on this Mac')" \
     "user       $USER" \
@@ -142,7 +159,7 @@ situation() {
     "host dir   $host" \
     "clone      $clone" \
     "keys       $keys" \
-    "bundle     ${bundles:-none seen in Downloads, Desktop or ~; have it AirDropped before step 3}"
+    "bundle     ${bundles:-none seen in Downloads, Desktop, ~ or /Volumes; have it AirDropped before step 3}"
   echo
 }
 
@@ -297,11 +314,24 @@ import_keys() {
 
   local bundle="${INIT_BUNDLE:-}"
   if [ -z "$bundle" ]; then
-    local start="$HOME/Downloads"
-    [ -d "$start" ] || start="$HOME"
-    note "Pick the keys-<host>-<date>.age file (AirDropped files land in Downloads)."
-    bundle="$(gum file --header "Key bundle" --height 12 "$start")"
+    local found typed="Somewhere else — type the path"
+    found="$(find_bundles)"
+    if [ -n "$found" ]; then
+      bundle="$(printf '%s\n%s\n' "$found" "$typed" \
+        | gum choose --header "Which key bundle? (newest first)")"
+    else
+      note "No keys-<host>-<date>.age in Downloads, Desktop, ~ or /Volumes."
+    fi
+    if [ -z "$bundle" ] || [ "$bundle" = "$typed" ]; then
+      note "Drag the file onto this window to fill in its path, then press enter."
+      bundle="$(gum input --placeholder "$HOME/Downloads/keys-<host>-<date>.age")"
+      # Finder's drag-and-drop escapes spaces and may quote the whole path.
+      bundle="$(printf '%s' "$bundle" | sed -e 's/^ *//' -e 's/ *$//' -e "s/^['\"]//" -e "s/['\"]$//" -e 's/\\ / /g')"
+      # shellcheck disable=SC2088  # matching a literal ~ the user typed, not expanding one
+      case "$bundle" in "~/"*) bundle="$HOME/${bundle#\~/}" ;; esac
+    fi
   fi
+  [ -n "$bundle" ] || die "no bundle given; re-run with INIT_BUNDLE=/path/to/keys-....age"
   [ -f "$bundle" ] || die "$bundle: no such file"
 
   say "age asks for the bundle's passphrase next; that prompt is age's own, not mine."

@@ -62,6 +62,12 @@ Every prompt can be answered from the environment (`INIT_HOSTNAME`,
 which is how CI runs it without a terminal. `nix run .#init -- --help` lists
 them.
 
+Step 3 lists every `keys-*.age` it can find in `~/Downloads`, `~/Desktop`, `~`,
+the clone and any mounted volume, newest first, and offers a typed path when
+the bundle is somewhere else. If the file is on an external disk that is not
+mounted yet, or you would rather not answer the prompt at all, pass
+`INIT_BUNDLE=/path/to/keys-<host>-<date>.age`.
+
 The rest of this document is the same procedure by hand, and what to do when
 a step fails.
 
