@@ -80,6 +80,10 @@
       "scrcpy"
       "rust"
       "httpie"
+      # Node version manager. The `node` on this machine today is whatever
+      # version the `sf` formula happened to pull in as a dependency, which is
+      # not a choice anybody made.
+      "nvm"
       # Salesforce CLI. Was also listed as a cask, where the same tool ships
       # under the token `salesforce-cli` and is disabled upstream since
       # 2026-09-01 for failing Gatekeeper; the formula is the one that works.

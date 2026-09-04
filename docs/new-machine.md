@@ -170,9 +170,14 @@ casks the host lists in `mine.homebrew`. Restart the terminal afterwards.
 - **App logins.** Docker Desktop, Slack, Spotify, Steam, NordVPN, ZeroTier,
   Parsec, 1Password: all manual. Pritunl is not in that list — `wm-login`
   covers it, below.
-- **Raycast.** `modules/config/raycast/` holds the scripts and quicklinks, but
-  Raycast has to be pointed at that directory once, and its own settings need
-  importing from a Raycast export.
+- **Raycast.** The hotkey (Control-D) and the script commands themselves are
+  declared — the commands land in `~/.config/raycast/scripts` as symlinks into
+  the store — but Raycast will not find them until it is pointed at that
+  directory: Settings -> Extensions -> Script Commands -> "Add Script
+  Directory" -> `~/.config/raycast/scripts`. It keeps that list in an
+  encrypted SQLite database of its own, so there is nothing to write from nix.
+  `modules/config/raycast/quicklinks.json` has to be imported by hand for the
+  same reason, and the rest of Raycast's settings come from a Raycast export.
 - **Cloud logins.** With `mine.work.wemaintain.enable` on, `~/.aws/config`,
   the RDS CA bundle and the gcloud project are all in place after
   `build-switch`; nothing is copied from the old Mac. What is left is the

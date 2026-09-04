@@ -64,18 +64,19 @@ in
     system.defaults.CustomUserPreferences."com.raycast.macos".raycastGlobalHotkey =
       "Control-2";
 
-    # ...and something to actually start it. The hotkey above is inert while
-    # Raycast is not running, and a machine built from this repo has no reason
-    # to ever launch it: the cask only drops the bundle in /Applications, and
-    # Raycast's own "launch at login" is a login item it writes for itself the
-    # first time you open it by hand. Until then Control-D falls through to
-    # whatever macOS does with it, which is what a fresh Mac looks like (#9).
+    # ...and something to start it. The hotkey above is inert while Raycast is
+    # not running, and nothing in a build-switch launches it: the cask only
+    # drops the bundle in /Applications. Raycast does register a login item for
+    # itself on install, but that is opaque state it wrote, only takes effect
+    # at the *next* login, and is undone by anyone who quits the app on a
+    # machine that then stays up — all of which reads as "Control-D does
+    # nothing" rather than as "Raycast is closed".
     #
-    # `open -a` rather than running the binary directly: Raycast is an app
-    # bundle and expects to be launched as one, and `open` is a no-op if it is
-    # already up. RunAtLoad with no KeepAlive because launchd's job here is to
-    # start it once per login, not to supervise it — Raycast restarting itself
-    # after an update should not be fought over.
+    # `open -a` rather than the binary directly: Raycast is an app bundle and
+    # expects to be launched as one, and `open` is a no-op if it is already up,
+    # so this stacking with Raycast's own login item is harmless. RunAtLoad
+    # with no KeepAlive: the job is to start it once per login, not to supervise
+    # it — quitting Raycast on purpose should stay possible.
     launchd.user.agents.raycast = {
       serviceConfig = {
         Label = "com.${user}.raycast";

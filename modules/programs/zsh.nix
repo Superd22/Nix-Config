@@ -70,6 +70,18 @@
       # which blocked interactive prompts and stalled zsh -ic startup).
       export PATH="$HOME/.local/share/mise/shims:$PATH"
 
+      # nvm. The Homebrew formula deliberately installs no shim on PATH — it
+      # ships `nvm.sh` and expects a shell to source it — so the brew on its
+      # own leaves `nvm` as "command not found". Sourced by its opt path rather
+      # than `$(brew --prefix nvm)`, which would fork brew on every shell.
+      #
+      # Guarded, so this stays inert on a machine whose host file does not list
+      # the formula. `--no-use` loads the function without selecting a version,
+      # which keeps startup at a few ms; `nvm use` (or an `~/.nvm/alias/default`)
+      # is what puts an nvm-managed node on PATH.
+      export NVM_DIR="$HOME/.nvm"
+      [ -s /opt/homebrew/opt/nvm/nvm.sh ] && . /opt/homebrew/opt/nvm/nvm.sh --no-use
+
       # Pick up & export secrets
       for file in ~/.secrets/*; do
         [[ -f "$file" ]] && export "''${file##*/}=$(<"$file")"

@@ -144,6 +144,85 @@ let
 
   dataSourcesFile = builtins.toFile "datagrip-dataSources.xml" dataSourcesXml;
 
+  # The datasources above are application-level, so every project sees them —
+  # but the Database tool window is project-scoped, and DataGrip with no project
+  # open is a welcome screen with nowhere to show them. A machine built from
+  # this repo therefore came up looking like the config had not applied at all,
+  # when in fact the file was in place and simply had no window to appear in.
+  #
+  # So the project is declared too. `RecentProjectsManager` is the component
+  # that decides what a launch opens (read out of the IDE the same way the
+  # datasource format was: `com.intellij.ide.RecentProjectsManagerBase`, storage
+  # `recentProjects.xml`), and `opened` on a `RecentProjectMetaInfo` is what
+  # `willReopenProjectOnStart` looks for. Seeding one entry makes the first
+  # launch land in a project with the connections already in it.
+  #
+  # `$USER_HOME$` is the IDE's own path macro, not a shell variable — it is
+  # written literally, and DataGrip expands it.
+  # `aws.rds.iam` is not DataGrip's own auth provider — nothing in the app
+  # bundle defines it (the bundled `database-cloudExplorer-aws` is the cloud
+  # browser, not the credential half). It comes from the AWS Toolkit plugin, so
+  # a datasource declared with `awsProfile` is listed but cannot connect until
+  # that plugin is installed. Declaring the datasource and then installing the
+  # plugin by hand is exactly the manual step this module exists to remove, so
+  # the plugin follows from the datasources that need it.
+  needsAwsToolkit = lib.any (ds: ds.authProvider == "aws.rds.iam") datasources;
+
+  # Plugins are unpacked into the IDE config directory, which is the same
+  # per-version directory the datasources go into and is found the same way.
+  pluginDirs = lib.mapAttrs
+    (name: plugin: pkgs.fetchzip {
+      inherit (plugin) url hash;
+      name = "datagrip-plugin-${name}";
+    })
+    cfg.plugins;
+
+  # Installed once per config directory and then left alone: the IDE updates
+  # its own plugins, and re-copying a pinned version over a newer one it fetched
+  # for itself would be this module picking a fight it does not need to win.
+  # Indented to sit where it is interpolated: nix strips the common leading
+  # whitespace off an indented string, so it has to be put back by hand.
+  indent = n: text:
+    let pad = lib.concatStrings (lib.genList (_: " ") n);
+    in pad + lib.replaceStrings [ "\n" ] [ "\n${pad}" ] text;
+
+  pluginInstall = indent 12 (lib.concatStringsSep "\n" (lib.mapAttrsToList
+    (name: drv: ''
+      dest="''${dir}plugins/${name}"
+      if [ ! -e "$dest" ]; then
+        $DRY_RUN_CMD mkdir -p "$dest"
+        $DRY_RUN_CMD cp -R ${drv}/. "$dest/"
+        # The store is read-only and the IDE expects to be able to update
+        # what it finds here.
+        $DRY_RUN_CMD chmod -R u+w "$dest"
+      fi'')
+    pluginDirs));
+
+  projectName = baseNameOf cfg.defaultProject;
+  projectParent = dirOf cfg.defaultProject;
+
+  recentProjectsFile = builtins.toFile "datagrip-recentProjects.xml" ''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!-- Seeded by modules/programs/datagrip on a machine where DataGrip had no
+         project of its own yet. DataGrip owns this file from here on. -->
+    <application>
+      <component name="RecentProjectsManager">
+        <option name="additionalInfo">
+          <map>
+            <entry key="$USER_HOME$/${cfg.defaultProject}">
+              <value>
+                <RecentProjectMetaInfo frameTitle="${lib.escapeXML projectName}" opened="true">
+                  <option name="displayName" value="${lib.escapeXML projectName}" />
+                </RecentProjectMetaInfo>
+              </value>
+            </entry>
+          </map>
+        </option>
+        <option name="lastProjectLocation" value="$USER_HOME$/${projectParent}" />
+      </component>
+    </application>
+  '';
+
   datasourceModule = { name, config, ... }: {
     options = {
       name = lib.mkOption {
@@ -252,6 +331,56 @@ in
 {
   # `mine.programs.datagrip.enable` itself is declared in modules/options.nix,
   # with the rest of the opt-in flags. Only the schema below lives here.
+  options.mine.programs.datagrip.defaultProject = lib.mkOption {
+    type = lib.types.str;
+    default = "DataGripProjects/Databases";
+    example = "src/db";
+    description = ''
+      Project DataGrip opens on launch, as a path relative to the home
+      directory. It is created empty if it does not exist.
+
+      DataGrip only draws the Database tool window inside a project, so without
+      one the datasources below are loaded but have nowhere to appear, and a
+      freshly built machine looks like the config did not apply. Seeding a
+      project means the first launch lands somewhere they are visible.
+
+      This is a *seed*: it is written only while DataGrip has no project of its
+      own on the machine, and the IDE owns `recentProjects.xml` from then on, so
+      it never fights whatever you go on to open.
+    '';
+  };
+
+  options.mine.programs.datagrip.plugins = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.submodule {
+      options = {
+        url = lib.mkOption {
+          type = lib.types.str;
+          description = "Marketplace download URL for the plugin archive.";
+        };
+        hash = lib.mkOption {
+          type = lib.types.str;
+          description = "SRI hash of that archive.";
+        };
+      };
+    });
+    default = { };
+    description = ''
+      Plugins to unpack into DataGrip's config directory, keyed by the
+      directory name to give them.
+
+      The URL is a pinned marketplace artifact, which means it is pinned to an
+      IDE build too: `https://plugins.jetbrains.com/pluginManager?action=download&id=<id>&build=<buildNumber>`
+      redirects to the version compatible with the build in
+      `/Applications/DataGrip.app/Contents/Resources/product-info.json`, and
+      that redirect target is what goes here. After a major IDE upgrade the
+      pinned build may no longer be compatible and DataGrip will disable the
+      plugin — re-resolve the URL and update the hash.
+
+      Each is installed only if its directory is absent, so the IDE's own
+      plugin updates are left alone.
+    '';
+  };
+
   options.mine.programs.datagrip.datasources = lib.mkOption {
     type = lib.types.attrsOf (lib.types.submodule datasourceModule);
     default = { };
@@ -289,6 +418,31 @@ in
         '';
       })
       cfg.datasources;
+
+    # AWS Toolkit, whenever something here actually authenticates with it.
+    # `mkDefault` so a host can pin a different version, and a plain merge so a
+    # host can add plugins of its own alongside it.
+    #
+    # YAML comes with it. Not as a nicety — the toolkit's `plugin-intellij.xml`
+    # carries a hard `<depends>org.jetbrains.plugins.yaml</depends>`, and
+    # DataGrip does not bundle YAML the way IDEA does, so without it the
+    # toolkit refuses to load and the RDS datasources are back to having no
+    # `aws.rds.iam` provider. Marketplace resolves plugin dependencies for you;
+    # a pinned artifact URL does not, so a transitive dependency has to be
+    # pinned as its own entry here.
+    #
+    # Both are resolved for DataGrip build DB-261.26222.86 (2026.1.4).
+    mine.programs.datagrip.plugins = lib.mkIf needsAwsToolkit {
+      aws-toolkit = lib.mkDefault {
+        url = "https://downloads.marketplace.jetbrains.com/files/11349/1120580/aws-toolkit-jetbrains-standalone-4.7.261.zip";
+        hash = "sha256-4OHKxrLaSxRjn4U/sVasGImpWFIdD62sbQ2hTjAODV0=";
+      };
+
+      yaml = lib.mkDefault {
+        url = "https://downloads.marketplace.jetbrains.com/files/13126/1086328/yaml-261.26222.22.zip";
+        hash = "sha256-jQP/ksyFlAiRc4r/nA/fhWy29zvOe47B+0tHoW3RepA=";
+      };
+    };
 
     # "I want DataGrip" is one switch: the app and its connections. The cask
     # used to sit unconditionally in modules/homebrew.nix; #9 gave the rest of
@@ -346,6 +500,18 @@ in
             # `install` rather than `cp`: the source is a read-only store path,
             # and DataGrip has to be able to write this file.
             $DRY_RUN_CMD install -m 0644 ${dataSourcesFile} "$target"
+
+            # Somewhere for them to be shown. Only while DataGrip has no
+            # project of its own: an entry-less file counts as none, which is
+            # the state a machine is in after the IDE has been launched once
+            # and closed at the welcome screen without opening anything.
+            recent="''${dir}options/recentProjects.xml"
+            if [ ! -e "$recent" ] || ! ${pkgs.gnugrep}/bin/grep -q "<entry key=" "$recent"; then
+              $DRY_RUN_CMD mkdir -p "$HOME/${cfg.defaultProject}/.idea"
+              $DRY_RUN_CMD install -m 0644 ${recentProjectsFile} "$recent"
+            fi
+
+${pluginInstall}
           done
         fi
       '';
