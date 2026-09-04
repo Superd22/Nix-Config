@@ -18,4 +18,4 @@ keys nothing can regenerate from the old one (`nix run .#keys`).
 # todo
 - [ ] auto zerotier
 - [ ] auto pritnul
-- [ ] auto aws config
+- [x] auto aws config (`mine.work.wemaintain`, #8)

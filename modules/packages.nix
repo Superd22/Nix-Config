@@ -54,8 +54,8 @@ with pkgs; [
 
   nixd
   github-cli
-  awscli2
   terraform
 
-  google-cloud-sdk
+  # awscli2 and google-cloud-sdk come with mine.work.wemaintain (#8); a fork
+  # that does not work there does not get them.
 ]
