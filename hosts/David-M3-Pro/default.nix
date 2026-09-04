@@ -106,7 +106,7 @@
       "obs"
 
       # Browsers
-      "sigmaos"
+      "google-chrome"
 
       # Networking. Pritunl is not here: it comes with
       # `mine.work.wemaintain.enable`, which owns the VPN profile too (#32).
