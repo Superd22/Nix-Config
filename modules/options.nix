@@ -139,6 +139,10 @@
         has to be added to `nix-homebrew.taps` there, or the activation will try
         to fetch it and fail. The option exists so a fork that wants mutable
         taps has the seam already in place.
+
+        The third-party taps this repo ships are not listed through here: they
+        are pinned and marked `trusted` next to `nix-homebrew.taps` in flake.nix,
+        which Homebrew 6 requires before it will load anything out of them.
       '';
     };
   };

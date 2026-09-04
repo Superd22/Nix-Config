@@ -90,21 +90,54 @@
           nix-homebrew.darwinModules.nix-homebrew
           # Homebrew is owned by the machine's user, so this needs the config
           # rather than a flake-level `let` binding.
-          ({ config, ... }: {
-            nix-homebrew = {
-              user = config.mine.user.name;
-              enable = true;
-              taps = {
+          ({ config, lib, ... }:
+            let
+              officialTaps = {
                 "homebrew/homebrew-core" = homebrew-core;
                 "homebrew/homebrew-cask" = homebrew-cask;
                 "homebrew/homebrew-bundle" = homebrew-bundle;
+              };
+              # Third-party taps. Kept apart from the official ones because
+              # Homebrew treats them differently: see `homebrew.taps` below.
+              extraTaps = {
                 "deskflow/homebrew-deskflow" = deskflowHomebrewTap;
                 "openfga/homebrew-openfga" = openfgaTap;
               };
-              mutableTaps = false;
-              autoMigrate = true;
-            };
-          })
+            in
+            {
+              nix-homebrew = {
+                user = config.mine.user.name;
+                enable = true;
+                taps = officialTaps // extraTaps;
+                mutableTaps = false;
+                autoMigrate = true;
+              };
+
+              # Homebrew 6.0 turned on HOMEBREW_REQUIRE_TAP_TRUST, which refuses
+              # to load a formula or cask from a third-party tap until someone
+              # has run `brew trust`. During an activation there is nobody to
+              # run it, so `brew bundle` aborts:
+              #
+              #   error: refusing to load formula openfga/openfga/fga from
+              #   untrusted tap
+              #
+              # `trusted = true` puts `trusted: true` on the Brewfile's tap
+              # line, which makes `brew bundle` record the trust itself before
+              # it loads anything. Trusting the tap covers every formula and
+              # cask in it, so `brews = [ "fga" ]` keeps working unqualified.
+              #
+              # It is the same trust decision that adding the flake input was:
+              # mutableTaps = false means these are cloned from the store at the
+              # revision flake.lock pins, and nothing changes under us until
+              # that lock is bumped. Official taps need none of this.
+              homebrew.taps = lib.mapAttrsToList
+                (name: _: {
+                  # user/homebrew-repo is the directory; brew calls it user/repo.
+                  name = builtins.replaceStrings [ "/homebrew-" ] [ "/" ] name;
+                  trusted = true;
+                })
+                extraTaps;
+            })
           ./hosts/common/darwin.nix
           (./hosts + "/${hostName}")
         ];
