@@ -51,12 +51,20 @@
       # writeShellApplication runs shellcheck at build time and pins the
       # runtime dependencies, so the scripts are checked rather than just
       # executed out of the source tree.
-      mkScript = name: pkgs.writeShellApplication {
+      mkScript = name: extraInputs: pkgs.writeShellApplication {
         inherit name;
-        runtimeInputs = with pkgs; [ coreutils git ];
+        runtimeInputs = with pkgs; [ coreutils git ] ++ extraInputs;
         text = builtins.readFile (./apps + "/${name}.sh");
       };
-      scripts = nixpkgs.lib.genAttrs [ "build" "build-switch" "rollback" ] mkScript;
+      scripts = nixpkgs.lib.mapAttrs mkScript {
+        build = [ ];
+        build-switch = [ ];
+        rollback = [ ];
+        # Moves the three irreplaceable keys between machines; see
+        # apps/keys.sh and docs/new-machine.md. `nix` itself is deliberately
+        # not pinned here: the one on PATH is the Determinate install.
+        keys = with pkgs; [ age gnupg gnutar gzip openssh ];
+      };
       # Every directory under hosts/ except the shared `common/` is a machine,
       # named after its hostname so `hostname -s` picks the right one.
       hostNames = builtins.attrNames (nixpkgs.lib.filterAttrs

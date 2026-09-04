@@ -6,6 +6,8 @@ name matches `hostname -s`; pass a host name to build another one, e.g.
 `nix run .#build-switch -- example`.
 `nix flake update` to upgrade
 
+**docs/new-machine.md** how to set up a new Mac, and how to move the three
+keys nothing can regenerate from the old one (`nix run .#keys`).
 **hosts** one directory per machine, named after its hostname, plus
 `hosts/common` for the darwin config they share. Each becomes
 `darwinConfigurations.<hostname>`.
@@ -14,7 +16,6 @@ name matches `hostname -s`; pass a host name to build another one, e.g.
 
 
 # todo
-- [ ] id_rsa auto
 - [ ] auto zerotier
 - [ ] auto pritnul
 - [ ] auto aws config

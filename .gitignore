@@ -1,5 +1,6 @@
 result
-docs
+# docs/ itself is tracked; research/ holds local reading notes that are not.
+docs/research/
 .serena
 .vscode
 
