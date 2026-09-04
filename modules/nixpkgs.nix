@@ -1,7 +1,13 @@
 { config, pkgs, ... }:
 
 let
-  emacsOverlaySha256 = "06413w510jmld20i4lik9b36cfafm501864yq8k4vxl5r4hn0j0h";
+  # Pinned to a commit, not to refs/heads/master: a branch tarball moves, but
+  # the sha256 below does not, so the pair only agreed on machines that already
+  # had the old tarball in their store. Anywhere else — CI, or anyone who forks
+  # this repo — evaluation died with "NAR hash mismatch". This rev is the
+  # content that was already cached, so nothing about what gets built changes.
+  emacsOverlayRev = "9f303ef429e3a6cf0aabedd007e4ea6398a6f67b";
+  emacsOverlaySha256 = "11p1c1l04zrn8dd5w8zyzlv172z05dwi9avbckav4d5fk043m754";
 in
 {
 
@@ -22,7 +28,7 @@ in
                   (attrNames (readDir path)))
 
       ++ [(import (builtins.fetchTarball {
-               url = "https://github.com/dustinlyons/emacs-overlay/archive/refs/heads/master.tar.gz";
+               url = "https://github.com/dustinlyons/emacs-overlay/archive/${emacsOverlayRev}.tar.gz";
                sha256 = emacsOverlaySha256;
            }))];
   };
