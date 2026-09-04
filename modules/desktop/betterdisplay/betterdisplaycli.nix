@@ -1,12 +1,14 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 {
-  system.activationScripts.extraActivation.text = ''
-    cat > /usr/local/bin/betterdisplaycli << 'EOF'
-    #!/bin/bash
-    exec /Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay "$@"
-    EOF
-    chmod +x /usr/local/bin/betterdisplaycli
-    ln -f /Users/david/.config/nixos-config/modules/desktop/betterdisplay/next-monitor-of-workspace.sh /usr/local/bin/workspace-to-next-monitor
-  '';
+  config = lib.mkIf config.mine.desktop.betterdisplay.enable {
+    system.activationScripts.extraActivation.text = ''
+      cat > /usr/local/bin/betterdisplaycli << 'EOF'
+      #!/bin/bash
+      exec /Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay "$@"
+      EOF
+      chmod +x /usr/local/bin/betterdisplaycli
+      ln -f /Users/david/.config/nixos-config/modules/desktop/betterdisplay/next-monitor-of-workspace.sh /usr/local/bin/workspace-to-next-monitor
+    '';
+  };
 }

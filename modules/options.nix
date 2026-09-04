@@ -39,4 +39,46 @@
       '';
     };
   };
+
+  # Opt-in units (#3). Everything under here is a `mkEnableOption`, so it
+  # defaults to `false` and a host has to ask for it by name. That is the point:
+  # a fork that copies hosts/example gets a machine with nothing exotic turned
+  # on, and turning something off is one line in the host file rather than an
+  # edit to a module that upstream also maintains.
+  #
+  # The modules themselves are always imported by modules/desktop/default.nix
+  # and modules/services/default.nix; only their `config` is gated. Import lists
+  # stay static so the wizard (#5) never has to rewrite one.
+  options.mine.desktop = {
+    aerospace.enable = lib.mkEnableOption ''
+      the AeroSpace tiling window manager, configured from
+      modules/desktop/aerospace/.aerospace.toml
+    '';
+
+    sketchybar.enable = lib.mkEnableOption ''
+      the SketchyBar status bar
+    '';
+
+    betterdisplay.enable = lib.mkEnableOption ''
+      the BetterDisplay helper scripts: a `betterdisplaycli` shim and
+      `workspace-to-next-monitor`, both installed into /usr/local/bin by an
+      activation script. Needs the `betterdisplay` cask, which is currently
+      listed in modules/homebrew.nix (#9 moves that here)
+    '';
+
+    dock.enable = lib.mkEnableOption ''
+      declarative management of the macOS Dock. When on, the Dock is either
+      populated from `local.dock.entries` or stripped entirely, depending on
+      `local.dock.enable`. When off, this config does not touch the Dock at all,
+      which is what you want on a machine whose Dock someone else arranged
+    '';
+  };
+
+  options.mine.services = {
+    # Hyphenated to match the launchd label and the directory it lives in.
+    "screen-lock-monitor".enable = lib.mkEnableOption ''
+      the screen-lock-monitor launchd agent, a small Swift binary built from
+      modules/services/screen-lock-monitor that watches macOS lock/unlock events
+    '';
+  };
 }
