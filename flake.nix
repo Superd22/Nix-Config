@@ -58,15 +58,12 @@
         text = builtins.readFile (./apps + "/${name}.sh");
       };
       scripts = nixpkgs.lib.genAttrs [ "build" "build-switch" "rollback" ] mkScript;
-    in
-    {
-      devShells.${system} = devShell;
-      packages.${system} = scripts;
-      apps.${system} = nixpkgs.lib.mapAttrs
-        (_: drv: { type = "app"; program = nixpkgs.lib.getExe drv; })
-        scripts;
-
-      darwinConfigurations.${system} = darwin.lib.darwinSystem {
+      # Every directory under hosts/ except the shared `common/` is a machine,
+      # named after its hostname so `hostname -s` picks the right one.
+      hostNames = builtins.attrNames (nixpkgs.lib.filterAttrs
+        (name: type: type == "directory" && name != "common")
+        (builtins.readDir ./hosts));
+      mkHost = hostName: darwin.lib.darwinSystem {
         inherit system;
         specialArgs = inputs;
         modules = [
@@ -87,8 +84,18 @@
               autoMigrate = true;
             };
           }
-          ./hosts/darwin
+          ./hosts/common/darwin.nix
+          (./hosts + "/${hostName}")
         ];
       };
+    in
+    {
+      devShells.${system} = devShell;
+      packages.${system} = scripts;
+      apps.${system} = nixpkgs.lib.mapAttrs
+        (_: drv: { type = "app"; program = nixpkgs.lib.getExe drv; })
+        scripts;
+
+      darwinConfigurations = nixpkgs.lib.genAttrs hostNames mkHost;
   };
 }
