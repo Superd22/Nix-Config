@@ -212,7 +212,12 @@ let
       ${lib.optionalString cfg.gcp.enable ''
         if [ "$what" = gcp ] || [ "$what" = all ]; then
           echo "==> Google Cloud (${cfg.email}, project ${cfg.gcp.project})"
-          gcloud auth login ${lib.escapeShellArg cfg.email}
+          # --force, or gcloud first tries to reuse and refresh the credentials
+          # it already holds for this account, and a refresh past the
+          # Workspace session window is "Reauthentication required. Please
+          # enter your password:" in the terminal. With it, every run is the
+          # browser SSO and nothing else.
+          gcloud auth login --force ${lib.escapeShellArg cfg.email}
           # Application Default Credentials: what SDKs and Terraform use, as
           # opposed to the gcloud CLI itself. A separate consent screen.
           gcloud auth application-default login
