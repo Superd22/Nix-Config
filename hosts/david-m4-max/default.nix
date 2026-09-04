@@ -98,6 +98,7 @@
       # Communication
       "discord"
       "signal"
+      "ferdium"
 
       # Entertainment
       "vlc"
