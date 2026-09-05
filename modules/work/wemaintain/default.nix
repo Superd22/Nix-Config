@@ -561,6 +561,54 @@ in
       })
       (lib.filterAttrs (_: db: db.datagrip.enable) cfg.databases);
 
+    # The MCP servers Claude Code talks to for work, merged into ~/.claude.json
+    # by modules/programs/claude-code. They are here rather than in that
+    # module's mcp-servers.json for the same reason the Pritunl cask is here:
+    # a Looker instance at wemaintain.cloud.looker.com and three Bedrock
+    # AgentCore gateways are WeMaintain's, and a fork has no account for any of
+    # them. Same story as the rest of this module — endpoints only, no
+    # credentials; Claude Code does OAuth against these and keeps the tokens in
+    # the macOS keychain.
+    #
+    # The claude-code module ignores this when it is off, so nothing is gated.
+    mine.programs.claude-code.extraMcpServers = {
+      datadog-mcp = {
+        type = "http";
+        # The EU site: WeMaintain's Datadog org lives there, and the US
+        # endpoint would 404 against it.
+        url = "https://mcp.datadoghq.eu/v1/mcp";
+      };
+
+      looker = {
+        type = "http";
+        url = "https://wemaintain.cloud.looker.com/mcp";
+        # Looker wants a registered OAuth client and a fixed loopback port to
+        # hand the code back to; both are public, the token is not and is not
+        # here.
+        oauth = {
+          clientId = "2f98abc6-3789-4c86-bdf1-1a5be9b83b78";
+          callbackPort = 8080;
+        };
+      };
+
+      # Bedrock AgentCore gateways. The host names are generated per gateway
+      # and cannot be derived from anything, so they are written out.
+      mcp-db = {
+        type = "http";
+        url = "https://mcp-prodeng-mcp-gateway-ppqa4f3owf.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
+      };
+
+      mcp-graphql = {
+        type = "http";
+        url = "https://mcp-mcp-gateway-aq3foghq4u.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
+      };
+
+      mcp-wm-prodeng-staging = {
+        type = "http";
+        url = "https://mcp-prodeng-mcp-gateway-1grpyouq7z.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
+      };
+    };
+
     # /etc/zshenv is fought over by two other tools:
     #   - tech.bastion.aiproxy (Bastion, the endpoint agent WeMaintain deploys)
     #     appends its HTTPS_PROXY / NODE_EXTRA_CA_CERTS exports

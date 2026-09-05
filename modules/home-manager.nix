@@ -13,6 +13,8 @@ in
    # A nix-darwin module despite living in modules/programs: it owns both the
    # cask and the datasource file. See its header.
    ./programs/datagrip
+   # Likewise: it owns home files and an option the work module contributes to.
+   ./programs/claude-code
   ];
 
   # It me

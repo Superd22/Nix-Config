@@ -87,6 +87,17 @@
   # things that arrange your screen. The datasource schema that goes with this
   # flag is declared in modules/programs/datagrip, which is where it is used.
   options.mine.programs = {
+    claude-code.enable = lib.mkEnableOption ''
+      Claude Code's configuration: `~/.claude/settings.json`, `~/.claude/skills`
+      and `~/.claude/CLAUDE.md` become symlinks to modules/config/claude, so the
+      files Claude Code reads are the files this repo tracks and a skill added
+      by hand is versioned without a rebuild. Also merges the MCP server list
+      into `~/.claude.json`, which cannot be symlinked because it is mostly
+      machine state. Does not install Claude Code itself — that is a cask, named
+      in `hosts/<hostname>`. See docs/two-paths.md for why this module is shaped
+      unlike every other one here
+    '';
+
     datagrip.enable = lib.mkEnableOption ''
       DataGrip: installs the cask and applies
       `mine.programs.datagrip.datasources` as global datasources, so the same

@@ -10,6 +10,9 @@ name matches `hostname -s`; pass a host name to build another one, e.g.
 keys nothing can regenerate from the old one (`nix run .#keys`). On a factory
 Mac, `curl -fsSL https://raw.githubusercontent.com/Superd22/Nix-Config/main/bootstrap.sh | sh`
 runs the whole thing as a wizard (`bootstrap.sh`, then `nix run .#init`).
+**docs/two-paths.md** why most modules generate the files they manage and
+`modules/programs/claude-code` instead points `~/.claude` back into this repo —
+and how to tell which shape a new module wants.
 **hosts** one directory per machine, named after its hostname, plus
 `hosts/common` for the darwin config they share. Each becomes
 `darwinConfigurations.<hostname>`.

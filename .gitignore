@@ -8,3 +8,6 @@ docs/research/
 # open, which is how modules/config/datagrip and modules/darwin/home/datagrip
 # ended up in this repo. Datasources are declared in nix now (#7).
 .idea/
+
+# Claude Code agent worktrees, created in whatever repo it is run in.
+.claude/
