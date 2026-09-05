@@ -8,4 +8,10 @@
 # `rev` is frozen and nix-homebrew sets HOMEBREW_NO_AUTO_UPDATE=1, so nothing
 # here moves on its own. `brew tap --bump` re-resolves HEAD.
 {
+  "superd22/homebrew-macos-steam" = {
+    owner = "superd22";
+    repo = "homebrew-macos-steam";
+    rev = "7ce6575f66091562db47cf61c0e761b7f53fffa6";
+    hash = "sha256-TF2kE0aVIx+Xv6qn7A3O5jUnRAwM+opYbvE263p4b6U=";
+  };
 }
