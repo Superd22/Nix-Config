@@ -22,10 +22,14 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
 # See: https://nikitabobko.github.io/AeroSpace/guide#on-window-detected-callback
 #
-# Written with the modern command-based `if` rather than the legacy
-# `if.app-id` form. The condition is a plain string, so this costs nothing in
-# TOML 1.0.0 terms — the one thing that would (a multi-line inline table) is
-# avoided by keeping each rule on a single line inside a multi-line array.
+# Still the legacy `if = { app-id = ... }` condition, not the modern
+# `if = 'test %{app-bundle-id} = ...'` command form, and not by choice:
+# nix-darwin types this option's `if` as a submodule of five fixed keys, so the
+# string form does not type-check. AeroSpace itself accepts it fine. Upstream
+# soft-deprecates the legacy form but expects to support it indefinitely.
+#
+# The layout below is a multi-line *array* of single-line inline tables, which
+# keeps it readable while staying TOML 1.0.0-legal — see the dialect note above.
 #
 # This has to sit up here with the other top-level keys: as an array it is a
 # top-level assignment, and TOML forbids those after the first [table] header.

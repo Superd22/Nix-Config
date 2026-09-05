@@ -1,6 +1,0 @@
-# TOML 1.0.0: an *array* may span newlines; only an *inline table* may not.
-# So one rule per line, inside a multi-line array, is legal 1.0.0.
-on-window-detected = [
-    { if = 'test %{app-bundle-id} = com.apple.iphonesimulator', run = 'layout tiling' },
-    { if = 'test %{app-bundle-id} = pro.betterdisplay.BetterDisplay', run = 'move-node-to-workspace BD' },
-]

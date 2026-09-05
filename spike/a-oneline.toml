@@ -1,3 +1,0 @@
-[[on-window-detected]]
-if = { app-id = 'com.apple.iphonesimulator' }
-run = 'layout tiling'
