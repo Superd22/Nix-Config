@@ -54,7 +54,16 @@ nix-brew — record Homebrew changes in the nix config instead of only on disk
       --switch      rebuild now (install only; tap/untap always rebuild)
       --no-switch   record only, do not rebuild
 
-Anything else is passed straight through to `brew`.
+A subcommand not listed above is passed straight through to `brew`. So is any
+flag not listed above, for `install` and `uninstall` — `brew install --cask
+--no-quarantine foo` reaches brew intact. `tap` and `untap` do not shell out to
+brew at all (they write the pin and rebuild), so they refuse unknown flags
+rather than pretend to honour them.
+
+One parsing limit: a bare word is read as a package name, so a flag taking a
+space-separated value (`--appdir /Applications`) would swallow the value. Use
+the `--appdir=/Applications` form, or `command brew` for the whole invocation.
+
 Set NIXOS_CONFIG_DIR to point at a checkout other than ~/.config/nixos-config.
 EOF
   exit 2
@@ -83,9 +92,15 @@ GEN_FILE="$REPO/hosts/$HOST/homebrew-generated.nix"
 # `brew tap` names a tap `user/repo`; on disk and in nix-homebrew's attrset it is
 # `user/homebrew-repo`. Normalise once, here, so the rest of the script only
 # deals in the directory form.
+# Lower-cased, because Homebrew downcases tap names internally and looks for
+# `superd22/homebrew-macos-steam` however you typed it. Preserving the input case
+# only works by accident of the default macOS filesystem being case-insensitive,
+# and lets the same tap be recorded twice under two spellings. GitHub is
+# case-insensitive for owner/repo, so fetchFromGitHub does not care.
 tap_key() {
-  local t="$1"
-  [[ "$t" == */* ]] || die "not a tap name: $t (want user/repo)"
+  local t
+  t="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+  [[ "$t" == */* ]] || die "not a tap name: $1 (want user/repo)"
   local owner="${t%%/*}" repo="${t#*/}"
   [[ "$repo" == homebrew-* ]] || repo="homebrew-$repo"
   echo "${owner}/${repo}"
@@ -187,7 +202,9 @@ cmd_tap() {
     case "$arg" in
       --bump) bump=1 ;;
       --no-switch) switch=0 ;;
-      -*) die "unknown flag for tap: $arg" ;;
+      # tap never shells out to brew — it writes the pin and rebuilds — so there
+      # is nothing to hand a flag to and honouring one would be a lie.
+      -*) die "tap does not take $arg. For brew's own tap, run: command brew tap $*" ;;
       *) target="$arg" ;;
     esac
   done
@@ -249,7 +266,7 @@ cmd_untap() {
   for arg in "$@"; do
     case "$arg" in
       --no-switch) switch=0 ;;
-      -*) die "unknown flag for untap: $arg" ;;
+      -*) die "untap does not take $arg. For brew's own untap, run: command brew untap $*" ;;
       *) target="$arg" ;;
     esac
   done
@@ -282,14 +299,16 @@ ask_disposition() {
 
 cmd_install() {
   local kind=brew disposition="" switch=0
-  local -a names=()
+  local -a names=() extra=()
   for arg in "$@"; do
     case "$arg" in
       --cask|--casks) kind=cask ;;
       -p|--permanent) disposition=permanent ;;
       -s|--scratch) disposition=scratch ;;
       --switch) switch=1 ;;
-      -*) die "unknown flag for install: $arg" ;;
+      # Anything else is brew's, not ours. A wrapper around a command with
+      # dozens of flags has no business rejecting the ones it has not heard of.
+      -*) extra+=("$arg") ;;
       *) names+=("$arg") ;;
     esac
   done
@@ -301,10 +320,19 @@ cmd_install() {
   # Install first: fast feedback, and a declaration for something that does not
   # build is worse than no declaration. The next activation is idempotent.
   if [ "$kind" = cask ]; then
-    command brew install --cask "${names[@]}"
+    command brew install --cask "${extra[@]+"${extra[@]}"}" "${names[@]}"
   else
-    command brew install "${names[@]}"
+    command brew install "${extra[@]+"${extra[@]}"}" "${names[@]}"
   fi
+
+  # brew's own dry run means "change nothing", and the ledger and the generated
+  # file are state like anything else.
+  for arg in "${extra[@]+"${extra[@]}"}"; do
+    if [ "$arg" = "--dry-run" ] || [ "$arg" = "-n" ]; then
+      note "dry run: nothing recorded"
+      return
+    fi
+  done
 
   if [ "$disposition" = scratch ]; then
     for n in "${names[@]}"; do ledger_add "$n"; done
@@ -334,20 +362,20 @@ cmd_install() {
 
 cmd_uninstall() {
   local kind=brew
-  local -a names=()
+  local -a names=() extra=()
   for arg in "$@"; do
     case "$arg" in
       --cask|--casks) kind=cask ;;
-      -*) die "unknown flag for uninstall: $arg" ;;
+      -*) extra+=("$arg") ;;
       *) names+=("$arg") ;;
     esac
   done
   [ "${#names[@]}" -gt 0 ] || usage
 
   if [ "$kind" = cask ]; then
-    command brew uninstall --cask "${names[@]}"
+    command brew uninstall --cask "${extra[@]+"${extra[@]}"}" "${names[@]}"
   else
-    command brew uninstall "${names[@]}"
+    command brew uninstall "${extra[@]+"${extra[@]}"}" "${names[@]}"
   fi
 
   # Uninstalling something that is still declared is a no-op with extra steps:
@@ -369,6 +397,8 @@ cmd_uninstall() {
 
 cmd_drift() {
   local installed
+  # A wrapper-only command; there is no `brew drift` to forward anything to.
+  if [ "$#" -gt 0 ]; then die "drift takes no arguments"; fi
   echo "${YELLOW}formulae installed but not declared${NC}"
   installed="$(command brew leaves | bare_names)"
   comm -23 <(echo "$installed") <(declared brew) | while read -r n; do
