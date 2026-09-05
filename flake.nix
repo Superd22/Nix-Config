@@ -97,12 +97,26 @@
                 "homebrew/homebrew-cask" = homebrew-cask;
                 "homebrew/homebrew-bundle" = homebrew-bundle;
               };
+              # Taps added with `brew tap`, which cannot write into
+              # /opt/homebrew/Library/Taps because mutableTaps = false makes it a
+              # store symlink. `nix-brew` records the pin in
+              # modules/homebrew/taps.nix instead and it is fetched here, so an
+              # imperative `brew tap` still ends up declarative (#35). Flake
+              # inputs have to be a literal attrset, which is why these are
+              # fetched rather than added to `inputs` — a generated data file is
+              # a much better thing for a script to own than this file is.
+              generatedTaps = lib.mapAttrs
+                (_: tap: pkgs.fetchFromGitHub {
+                  inherit (tap) owner repo rev hash;
+                })
+                (import ./modules/homebrew/taps.nix);
+
               # Third-party taps. Kept apart from the official ones because
               # Homebrew treats them differently: see `homebrew.taps` below.
               extraTaps = {
                 "deskflow/homebrew-deskflow" = deskflowHomebrewTap;
                 "openfga/homebrew-openfga" = openfgaTap;
-              };
+              } // generatedTaps;
             in
             {
               nix-homebrew = {
@@ -140,7 +154,17 @@
             })
           ./hosts/common/darwin.nix
           (./hosts + "/${hostName}")
-        ];
+        ]
+        # Brews and casks added with `brew install --permanent` (#35).
+        # `mine.homebrew.brews` / `.casks` are list options, so a generated file
+        # merges with the hand-written lists in the host and nothing has to edit
+        # that file. Conditional, so a new host and hosts/example need no
+        # ceremony to exist without one.
+        ++ nixpkgs.lib.optional
+          (builtins.pathExists (./hosts + "/${hostName}/homebrew-generated.nix"))
+          ({ ... }: {
+            mine.homebrew = import (./hosts + "/${hostName}/homebrew-generated.nix");
+          });
       };
     in
     {
