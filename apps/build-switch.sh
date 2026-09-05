@@ -12,6 +12,28 @@ NC=$'\033[0m'
 HOST="${1:-$(hostname -s)}"
 if [ "$#" -gt 0 ]; then shift; fi
 
+# macOS does not promise a stable case for the short hostname — configd can
+# rewrite it from DHCP, and this machine has been seen reporting both
+# `david-m4-max` and `David-M4-Max` on the same day. The flake attribute is the
+# directory name under hosts/ and is case-sensitive, so a flip turns a working
+# `build-switch` into "flake does not provide attribute". Match the directory
+# case-insensitively and use the directory's real name.
+#
+# Done unconditionally rather than behind a `[ -d "hosts/$HOST" ]` guard: the
+# filesystem is case-insensitive, so that test passes for `hosts/david-m4-max`
+# when the directory is really `David-M4-Max` and would skip the fix-up in
+# exactly the case it exists for. Falls through unchanged when nothing matches
+# — an unknown host, or being run from outside the repo — so nix still reports
+# the error it would have.
+host_lower="$(echo "$HOST" | tr '[:upper:]' '[:lower:]')"
+for candidate in hosts/*/; do
+  candidate="$(basename "$candidate")"
+  if [ "$(echo "$candidate" | tr '[:upper:]' '[:lower:]')" = "$host_lower" ]; then
+    HOST="$candidate"
+    break
+  fi
+done
+
 FLAKE_SYSTEM="darwinConfigurations.${HOST}.system"
 
 export NIXPKGS_ALLOW_UNFREE=1

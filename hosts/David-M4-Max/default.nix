@@ -1,4 +1,4 @@
-# david-m5-max. Copied from hosts/David-M3-Pro by init on 2026-09-04.
+# David's M4 Max MacBook. Copied from hosts/David-M3-Pro by init on 2026-09-04.
 #
 # The directory name is the flake attribute name and matches `hostname -s`,
 # so `nix run .#build-switch` picks this host with no argument.
