@@ -6,7 +6,7 @@ Everything here runs on macOS (aarch64-darwin). There is no `shared` /
 ## Layout
 ```
 .
-├── config/                # Config files not written in Nix (emacs, raycast)
+├── config/                # Config files not written in Nix (emacs, raycast, claude)
 ├── desktop/               # Window management & display: aerospace, betterdisplay,
 │                          # dock, sketchybar
 ├── services/              # Nix-darwin services (screen-lock-monitor)
@@ -16,8 +16,11 @@ Everything here runs on macOS (aarch64-darwin). There is no `shared` /
 ├── secrets.nix            # agenix secrets
 ├── home-manager.nix       # The nix-darwin module wiring up home-manager
 ├── programs/              # home-manager programs (git, zsh, vim, tmux, ssh, ...),
-│                          # plus datagrip/, which is a nix-darwin module (it owns
-│                          # both the cask and the IDE's datasource file)
+│                          # plus two nix-darwin modules: datagrip/ (owns both the
+│                          # cask and the IDE's datasource file) and claude-code/
+│                          # (points ~/.claude back at config/claude — see
+│                          # docs/two-paths.md, it is the one module here that
+│                          # does not generate what it manages)
 ├── files.nix              # Non-Nix, static configuration files (now immutable!)
 ├── homebrew/              # Homebrew policy; the lists come from mine.homebrew.*
 │   ├── nix-brew.sh        #   `brew tap`/`install` wrapper that records the pin (#35)

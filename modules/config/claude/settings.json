@@ -1,0 +1,69 @@
+{
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.airbyte.com)",
+      "Read(//Users/david/.claude/skills/**)",
+      "Read(//Users/david/.agents/skills/handoff/**)",
+      "mcp__linear-server__list_teams",
+      "mcp__linear-server__list_initiatives",
+      "mcp__linear-server__save_project",
+      "mcp__linear-server__save_issue",
+      "mcp__linear-server__list_issue_labels",
+      "mcp__linear-server__create_issue_label",
+      "WebSearch",
+      "WebFetch(domain:aws.amazon.com)",
+      "mcp__linear-server__save_comment",
+      "Bash(gcloud config *)",
+      "Bash(gcloud projects *)",
+      "Read(//private/tmp/**)",
+      "Bash(timeout 90 gcloud auth print-access-token --impersonate-service-account=dbt-cloud@data-stack-389913.iam.gserviceaccount.com)",
+      "Read(//codex/snippets/**)",
+      "Read(//codex/characters/**)",
+      "Bash(npx vitest *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx playwright *)",
+      "Bash(npx prettier *)",
+      "Bash(git commit *)",
+      "Bash(gh issue *)",
+      "Bash(python3 -)"
+    ]
+  },
+  "model": "opus[1m]",
+  "enabledPlugins": {
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "datadog@claude-plugins-official": true,
+    "mattpocock-skills@claude-plugins-official": true,
+    "sam@claude": true,
+    "slack@claude-plugins-official": true,
+    "miro@claude-plugins-official": true,
+    "avoid-ai-writing@conorbronsdon-skills": true,
+    "nopus@nopus": true
+  },
+  "extraKnownMarketplaces": {
+    "claude": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/david/wmtn/backend/packages/claude"
+      }
+    },
+    "conorbronsdon-skills": {
+      "source": {
+        "source": "github",
+        "repo": "conorbronsdon/avoid-ai-writing"
+      }
+    },
+    "nopus": {
+      "source": {
+        "source": "github",
+        "repo": "Vistyy/nopus"
+      }
+    }
+  },
+  "effortLevel": "medium",
+  "switchModelsOnFlag": false,
+  "agentPushNotifEnabled": true
+}

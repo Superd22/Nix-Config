@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "linear-server": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
+    },
+    "datagrip": {
+      "url": "http://127.0.0.1:64402/stream",
+      "type": "http"
+    }
+  }
+}

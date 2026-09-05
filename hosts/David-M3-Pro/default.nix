@@ -56,6 +56,11 @@
     email = "david@wemaintain.com";
   };
 
+  # Claude Code's skills, settings and MCP servers (#36). The WeMaintain MCP
+  # servers come from the work block above; this flag is what wires ~/.claude
+  # to modules/config/claude.
+  mine.programs.claude-code.enable = true;
+
   # DataGrip (#7). The WeMaintain datasources come from the block above; only
   # what is personal to this machine is listed here.
   mine.programs.datagrip = {
@@ -93,7 +98,8 @@
       "zed"
       "openlens"
       "warp"
-
+      "claude-code"
+      "claude"
       # Communication
       "discord"
       "signal"
