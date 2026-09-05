@@ -10,7 +10,11 @@
 # needs `pkgs.foo` upstream. `homebrew.casks` is a list option, so those
 # contributions merge with whatever the host asked for; see
 # modules/desktop/betterdisplay for the shape.
-{ config, ... }:
+{ config, pkgs, ... }:
+let
+  scripts = import ./scripts.nix { inherit pkgs; };
+  user = config.mine.user.name;
+in
 {
   homebrew = {
     enable = true;
@@ -32,5 +36,27 @@
     };
 
     inherit (config.mine.homebrew) brews casks taps;
+  };
+
+  # The imperative front door (#35). `nix-homebrew.mutableTaps = false` makes
+  # /opt/homebrew/Library/Taps a store symlink, so `brew tap` cannot write there;
+  # rather than make it writable — which costs HOMEBREW_NO_AUTO_UPDATE and turns
+  # a symlink flip into a 75 MiB rsync every activation — `nix-brew` writes the
+  # pin into the repo and rebuilds. See modules/homebrew/nix-brew.sh.
+  environment.systemPackages = [ scripts.nix-brew ];
+
+  home-manager.users.${user} = { ... }: {
+    # Shadowing `brew` is deliberate: the point is that muscle memory keeps
+    # working. This only lands in interactive zsh, so scripts that call `brew`
+    # non-interactively are unaffected, and `command brew` is the bypass for
+    # anyone who wants the real thing.
+    programs.zsh.initContent = ''
+      brew() {
+        case "''${1:-}" in
+          tap|untap|install|uninstall|drift) nix-brew "$@" ;;
+          *) command brew "$@" ;;
+        esac
+      }
+    '';
   };
 }

@@ -135,10 +135,14 @@
         Extra taps to make available to `brew bundle`.
 
         Note that flake.nix sets `nix-homebrew.mutableTaps = false`, so taps are
-        pinned as flake inputs and cloned from the store; a tap named here also
-        has to be added to `nix-homebrew.taps` there, or the activation will try
-        to fetch it and fail. The option exists so a fork that wants mutable
-        taps has the seam already in place.
+        pinned and cloned from the store; a tap named here also has to be added
+        to `nix-homebrew.taps` there, or the activation will try to fetch it and
+        fail. The option exists so a fork that wants mutable taps has the seam
+        already in place.
+
+        This is not the route for adding a tap day to day: `brew tap` (#35)
+        records the pin in modules/homebrew/taps.nix, which flake.nix fetches
+        and merges into `extraTaps` for you.
 
         The third-party taps this repo ships are not listed through here: they
         are pinned and marked `trusted` next to `nix-homebrew.taps` in flake.nix,
