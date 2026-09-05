@@ -1,0 +1,10 @@
+on-window-detected = [
+    {
+        if = { app-id = 'com.apple.iphonesimulator' },
+        run = 'layout tiling',
+    },
+    {
+        if = { app-id = 'pro.betterdisplay.BetterDisplay' },
+        run = 'move-node-to-workspace BD',
+    },
+]

@@ -1,4 +1,39 @@
 # Managed via nix, please update
+#
+# TOML dialect note (#37): this file is parsed *twice* — once by
+# `builtins.fromTOML` in aerospace.nix, once by AeroSpace itself. AeroSpace
+# 0.21.0+ speaks TOML 1.1.0, but Nix is still TOML 1.0.0, and Nix is the
+# stricter of the two, so this file must stay 1.0.0-legal. In practice that
+# means exactly one rule: an *inline table* may not span newlines. A multi-line
+# *array* is fine, which is enough to keep `on-window-detected` readable
+# without the 1.1.0 syntax upstream's docs now recommend. Breaking this fails
+# at `nix build` time, not at runtime.
+
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+# 2 makes `persistent-workspaces` explicit instead of inferring it from the
+# keybindings below.
+config-version = 2
+
+# Under config-version = 2 the fallback is an empty list, so the ten workspaces
+# bound to ctrl-1..ctrl-0 have to be named here to survive being emptied.
+# 'BD' is deliberately absent: it is force-assigned to the Odyssey below but has
+# no binding, so it was not persistent under config-version = 1 either.
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+# See: https://nikitabobko.github.io/AeroSpace/guide#on-window-detected-callback
+#
+# Written with the modern command-based `if` rather than the legacy
+# `if.app-id` form. The condition is a plain string, so this costs nothing in
+# TOML 1.0.0 terms — the one thing that would (a multi-line inline table) is
+# avoided by keeping each rule on a single line inside a multi-line array.
+#
+# This has to sit up here with the other top-level keys: as an array it is a
+# top-level assignment, and TOML forbids those after the first [table] header.
+on-window-detected = [
+    # Treat iOS Simulator as tiled (non-popup) windows.
+    { if = { app-id = 'com.apple.iphonesimulator' }, run = 'layout tiling' },
+    # { if = { app-id = 'pro.betterdisplay.BetterDisplay' }, run = 'move-node-to-workspace BD' },
+]
 
 # You can use it to add commands that run after login to macOS user session.
 # 'start-at-login' needs to be 'true' for 'after-login-command' to work
@@ -235,11 +270,6 @@ ctrl-shift-l = ['join-with right', 'mode main']
 # 0 = ['main', 'Left', 'Right']
 BD = ['Odyssey']
 
-# [[on-window-detected]]
-#     if.app-id = 'pro.betterdisplay.BetterDisplay'
-#     run = 'move-node-to-workspace BD'
-
-# Treat iOS Simulator as tiled (non-popup) windows
-[[on-window-detected]]
-    if.app-id = 'com.apple.iphonesimulator'
-    run = 'layout tiling'
+# `on-window-detected` used to live here, in the legacy `[[table]]` form. It is
+# now a top-level array near the top of the file — see the comment there for
+# why it had to move.
