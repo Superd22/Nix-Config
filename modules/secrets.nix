@@ -16,13 +16,10 @@ lib.mkIf config.mine.secrets.enable {
     "${home}/.ssh/id_ed25519"
   ];
 
-  age.secrets.GITHUB_NPM_TOKEN = {
-    symlink = true;
-    path = "${home}/.secrets/GITHUB_TOKEN";
-    file = "${secrets}/github-npm-token.age";
-    mode = "600";
-    owner = user;
-    group = "staff";
-  };
+  # No secrets are declared right now. GITHUB_NPM_TOKEN used to live here,
+  # exported as GITHUB_TOKEN by the ~/.secrets loop in modules/programs/zsh.nix
+  # and picked up by `gh`; it was dropped in favour of a plain `gh auth login`,
+  # whose token `gh` stores in ~/.config/gh/hosts.yml. Add `age.secrets.<NAME>`
+  # entries here when there is something to encrypt again.
 
 }
