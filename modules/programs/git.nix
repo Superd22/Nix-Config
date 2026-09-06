@@ -1,4 +1,4 @@
-{ osConfig, ... }:
+{ lib, osConfig, pkgs, ... }:
 
 {
   programs.git = {
@@ -19,6 +19,12 @@
         autocrlf = "input";
       };
       commit.gpgsign = true;
+
+      # `gh auth setup-git` equivalent
+      credential."https://github.com".helper = [
+        ""
+        "!${lib.getExe pkgs.gh} auth git-credential"
+      ];
       pull.rebase = true;
       rebase.autoStash = true;
     };
