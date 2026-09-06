@@ -11,7 +11,7 @@
   "superd22/homebrew-macos-steam" = {
     owner = "superd22";
     repo = "homebrew-macos-steam";
-    rev = "7ce6575f66091562db47cf61c0e761b7f53fffa6";
-    hash = "sha256-TF2kE0aVIx+Xv6qn7A3O5jUnRAwM+opYbvE263p4b6U=";
+    rev = "17ec99db67097826a02c3ef5c6eee6410fc4adbb";
+    hash = "sha256-IinYgvogQ4nvPVPI75W97uM+B1JwnHNOpDWxDcOUqi8=";
   };
 }
