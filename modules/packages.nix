@@ -56,6 +56,10 @@ with pkgs; [
   github-cli
   terraform
 
+  # Per-project dev shells. Activation on `cd` is direnv's job, not devenv's —
+  # see modules/programs/direnv.nix.
+  devenv
+
   # awscli2 and google-cloud-sdk come with mine.work.wemaintain (#8); a fork
   # that does not work there does not get them.
 ]

@@ -16,6 +16,7 @@
     ./alacritty.nix
     ./ssh.nix
     ./tmux.nix
+    ./direnv.nix
     # ./datagrip is deliberately absent: it is a nix-darwin module, not a
     # home-manager one, and is imported from modules/home-manager.nix.
   ];
