@@ -82,8 +82,10 @@
       export NVM_DIR="$HOME/.nvm"
       [ -s /opt/homebrew/opt/nvm/nvm.sh ] && . /opt/homebrew/opt/nvm/nvm.sh --no-use
 
-      # Pick up & export secrets
-      for file in ~/.secrets/*; do
+      # Pick up & export secrets. The `(N)` qualifier is nullglob for this one
+      # pattern: without it zsh's default NOMATCH makes an empty (or absent)
+      # ~/.secrets abort the loop with "no matches found" on every shell start.
+      for file in ~/.secrets/*(N); do
         [[ -f "$file" ]] && export "''${file##*/}=$(<"$file")"
       done
 
