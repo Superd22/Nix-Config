@@ -435,12 +435,9 @@ in
     # so adding a profile or a database is one entry in the host file.
     mine.work.wemaintain.aws.accounts = lib.mapAttrs (_: lib.mkDefault) {
       management = "134801206455";
-      # Workload OU
       prod = "637690252147";
       staging = "386096769601";
-      # Sandbox OU
       blue = "809773282616";
-      # Security OU
       audit = "867545114762";
       log = "983126921565";
     };
@@ -451,6 +448,7 @@ in
       in
       {
         "management:admin" = profile "management" "AWSAdministratorAccess";
+        "management:support" = profile "management" "SupportSecretAccess";
 
         "prod:admin" = profile "prod" "AWSAdministratorAccess";
         "prod:view" = profile "prod" "AWSReadOnlyAccess";
