@@ -41,7 +41,8 @@
     "slack@claude-plugins-official": true,
     "miro@claude-plugins-official": true,
     "avoid-ai-writing@conorbronsdon-skills": true,
-    "nopus@nopus": true
+    "nopus@nopus": true,
+    "sam@wemaintain": true
   },
   "extraKnownMarketplaces": {
     "claude": {
@@ -60,6 +61,12 @@
       "source": {
         "source": "github",
         "repo": "Vistyy/nopus"
+      }
+    },
+    "wemaintain": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/david/wmtn/backend/packages/claude"
       }
     }
   },
