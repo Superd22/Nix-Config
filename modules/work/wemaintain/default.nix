@@ -492,12 +492,11 @@ in
           shellFunction = lib.mkDefault "withPgProd";
           datagrip.name = lib.mkDefault "[PROD] PG";
         };
-        # Write access to production. DataGrip only, on purpose: a shell
-        # helper for it would be one tab-completion away from `withPgProd`.
         prod-write = {
           host = lib.mkDefault (rds "prod");
           user = lib.mkDefault "wmadmin";
           awsProfile = lib.mkDefault "prod:sudo";
+          shellFunction = lib.mkDefault "dangerWithPgProdWrite";
           datagrip.name = lib.mkDefault "DANGER WRITE PG PROD";
         };
       };
