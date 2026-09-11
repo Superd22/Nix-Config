@@ -28,9 +28,21 @@
 # Before #8 these were two hand-copied shell functions in modules/programs/zsh
 # and a separate list of datasources in the host file, and they disagreed about
 # staging (backend_dev + prod:back in the shell, wmadmin + prod:sudo in
-# DataGrip). The shell's values are the ones encoded below: they are what the
-# helpers used every day, while the DataGrip ones were a dump of whatever the
-# IDE happened to hold. A host that wants the other can override one field.
+# DataGrip). The shell's values won: they are what the helpers used every day,
+# while the DataGrip ones were a dump of whatever the IDE happened to hold. A
+# host that wants the other can override one field.
+#
+# Since PRENG-7692 the declaration is not here either. The endpoints, the AWS
+# accounts and profiles and the MCP servers live in the shared devenv repo's
+# `data/`, reached through the `wm` flake input, so this config and the devenv
+# modules read one copy rather than two that agree today. The same drift, one
+# level up. This module is now a CONSUMER of those facts: it still owns how
+# they are presented — the shell helper's name, the DataGrip label — and it
+# still owns everything that does the work.
+#
+# What is here and NOT shared, deliberately: `wm-login`, the ~/.aws/config
+# renderer, the gcloud activation, the DataGrip mapping, the Pritunl cask and
+# the /etc/zshenv fix. PRENG-7698 / 7699 / 7700 / 7703 are what move those.
 #
 #
 # NOTHING SECRET
@@ -39,10 +51,16 @@
 # bundle. The credentials are SSO tokens `aws sso login` puts in ~/.aws/sso,
 # RDS IAM tokens minted per connection, and whatever `gcloud auth login` keeps
 # in ~/.config/gcloud. None of that is in the store or in this repo.
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, wm, ... }:
 
 let
   cfg = config.mine.work.wemaintain;
+
+  # The organisation's facts, declared once in the shared devenv repo and read
+  # by both it and this config. Everything below is still `mkDefault`, so a
+  # host overrides one field exactly as it did when these were literals here.
+  # See wm's docs/adr/0005-one-declaration-two-consumers.md.
+  data = wm.lib.data;
   user = config.mine.user.name;
   home = config.users.users.${user}.home;
 
@@ -430,76 +448,46 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # The organisation, as it stands. Every leaf is `mkDefault` so a host can
-    # override one field without restating the rest, and attribute sets merge,
-    # so adding a profile or a database is one entry in the host file.
-    mine.work.wemaintain.aws.accounts = lib.mapAttrs (_: lib.mkDefault) {
-      management = "134801206455";
-      prod = "637690252147";
-      staging = "386096769601";
-      blue = "809773282616";
-      audit = "867545114762";
-      log = "983126921565";
-    };
+    # The organisation, as it stands, from data/aws.nix. Every leaf is
+    # `mkDefault` so a host can override one field without restating the rest,
+    # and attribute sets merge, so adding a profile or a database is still one
+    # entry in the host file.
+    mine.work.wemaintain.aws.accounts = lib.mapAttrs (_: lib.mkDefault) data.aws.accounts;
 
-    mine.work.wemaintain.aws.profiles =
-      let
-        profile = account: role: { account = lib.mkDefault account; role = lib.mkDefault role; };
-      in
-      {
-        "management:admin" = profile "management" "AWSAdministratorAccess";
-        "management:support" = profile "management" "SupportSecretAccess";
+    mine.work.wemaintain.aws.profiles = lib.mapAttrs
+      (_: p: {
+        account = lib.mkDefault p.account;
+        role = lib.mkDefault p.role;
+      })
+      data.aws.profiles;
 
-        "prod:admin" = profile "prod" "AWSAdministratorAccess";
-        "prod:view" = profile "prod" "AWSReadOnlyAccess";
-        "prod:sudo" = profile "prod" "AWSPowerUserAccess";
-        "prod:ioth" = profile "prod" "IoTHardwareFullAccess";
-        # sic: the permission set is spelled this way upstream.
-        "prod:iots" = profile "prod" "IoTSofwareFullAccess";
-        "prod:ds" = profile "prod" "DataScientistFullAccess";
-        "prod:back" = profile "prod" "BackendFullAccess";
-        "prod:mobile" = profile "prod" "MobileFullAccess";
-        "prod:front" = profile "prod" "FrontFullAccess";
-
-        "staging:admin" = profile "staging" "AWSAdministratorAccess";
-        "staging:sudo" = profile "staging" "AWSPowerUserAccess";
-
-        "blue:admin" = profile "blue" "AWSAdministratorAccess";
-        "blue:sudo" = profile "blue" "AWSPowerUserAccess";
-
-        "audit:admin" = profile "audit" "AWSAdministratorAccess";
-        "log:admin" = profile "log" "AWSAdministratorAccess";
-      };
-
-    # Both databases live in the prod account, staging included, which is why
-    # the staging helper authenticates with a `prod:*` profile.
+    # The endpoints come from data/databases.nix. Staging's lives in the prod
+    # ACCOUNT, which is why its helper authenticates with a `prod:*` profile.
+    #
+    # The two fields below are deliberately NOT in the shared data: the helper
+    # name and the DataGrip label are this config's choices about how to
+    # present a database, not facts about one. The label especially, since
+    # DataGrip derives a datasource's uuid from it and so owns local IDE state
+    # that must stay stable here.
+    #
+    # A name declared in two places can still drift from the devenv side's;
+    # PRENG-7700 closes that by defaulting it from the record's key.
     mine.work.wemaintain.databases =
       let
-        rds = env: "wemaintain-pgsql-${env}.cdtgkxemrw9j.eu-west-1.rds.amazonaws.com";
+        presentation = {
+          staging = { shellFunction = "withPg"; datagripName = "[STAGING] PG"; };
+          prod = { shellFunction = "withPgProd"; datagripName = "[PROD] PG"; };
+          prod-write = { shellFunction = "dangerWithPgProdWrite"; datagripName = "DANGER WRITE PG PROD"; };
+        };
       in
-      {
-        staging = {
-          host = lib.mkDefault (rds "staging");
-          user = lib.mkDefault "backend_dev";
-          awsProfile = lib.mkDefault "prod:back";
-          shellFunction = lib.mkDefault "withPg";
-          datagrip.name = lib.mkDefault "[STAGING] PG";
-        };
-        prod = {
-          host = lib.mkDefault (rds "prod");
-          user = lib.mkDefault "backend_dev";
-          awsProfile = lib.mkDefault "prod:sudo";
-          shellFunction = lib.mkDefault "withPgProd";
-          datagrip.name = lib.mkDefault "[PROD] PG";
-        };
-        prod-write = {
-          host = lib.mkDefault (rds "prod");
-          user = lib.mkDefault "wmadmin";
-          awsProfile = lib.mkDefault "prod:sudo";
-          shellFunction = lib.mkDefault "dangerWithPgProdWrite";
-          datagrip.name = lib.mkDefault "DANGER WRITE PG PROD";
-        };
-      };
+      lib.mapAttrs
+        (name: db:
+          lib.mapAttrs (_: lib.mkDefault) db
+          // lib.optionalAttrs (presentation ? ${name}) {
+            shellFunction = lib.mkDefault presentation.${name}.shellFunction;
+            datagrip.name = lib.mkDefault presentation.${name}.datagripName;
+          })
+        data.databases;
 
     assertions =
       [
@@ -559,52 +547,18 @@ in
       (lib.filterAttrs (_: db: db.datagrip.enable) cfg.databases);
 
     # The MCP servers Claude Code talks to for work, merged into ~/.claude.json
-    # by modules/programs/claude-code. They are here rather than in that
-    # module's mcp-servers.json for the same reason the Pritunl cask is here:
-    # a Looker instance at wemaintain.cloud.looker.com and three Bedrock
-    # AgentCore gateways are WeMaintain's, and a fork has no account for any of
-    # them. Same story as the rest of this module — endpoints only, no
-    # credentials; Claude Code does OAuth against these and keeps the tokens in
-    # the macOS keychain.
+    # by modules/programs/claude-code. From data/mcp.nix, in Claude Code's own
+    # `mcpServers` shape, so nothing is translated on the way through.
+    #
+    # They are shared rather than sitting in that module's mcp-servers.json for
+    # the same reason the Pritunl cask is here: a Looker instance at
+    # wemaintain.cloud.looker.com and three Bedrock AgentCore gateways are
+    # WeMaintain's, and a fork has no account for any of them. Endpoints only,
+    # no credentials; Claude Code does OAuth against these and keeps the tokens
+    # in the macOS keychain.
     #
     # The claude-code module ignores this when it is off, so nothing is gated.
-    mine.programs.claude-code.extraMcpServers = {
-      datadog-mcp = {
-        type = "http";
-        # The EU site: WeMaintain's Datadog org lives there, and the US
-        # endpoint would 404 against it.
-        url = "https://mcp.datadoghq.eu/v1/mcp";
-      };
-
-      looker = {
-        type = "http";
-        url = "https://wemaintain.cloud.looker.com/mcp";
-        # Looker wants a registered OAuth client and a fixed loopback port to
-        # hand the code back to; both are public, the token is not and is not
-        # here.
-        oauth = {
-          clientId = "2f98abc6-3789-4c86-bdf1-1a5be9b83b78";
-          callbackPort = 8080;
-        };
-      };
-
-      # Bedrock AgentCore gateways. The host names are generated per gateway
-      # and cannot be derived from anything, so they are written out.
-      mcp-db = {
-        type = "http";
-        url = "https://mcp-prodeng-mcp-gateway-ppqa4f3owf.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
-      };
-
-      mcp-graphql = {
-        type = "http";
-        url = "https://mcp-mcp-gateway-aq3foghq4u.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
-      };
-
-      mcp-wm-prodeng-staging = {
-        type = "http";
-        url = "https://mcp-prodeng-mcp-gateway-1grpyouq7z.gateway.bedrock-agentcore.eu-west-1.amazonaws.com/mcp";
-      };
-    };
+    mine.programs.claude-code.extraMcpServers = data.mcp;
 
     # /etc/zshenv is fought over by two other tools:
     #   - tech.bastion.aiproxy (Bastion, the endpoint agent WeMaintain deploys)
