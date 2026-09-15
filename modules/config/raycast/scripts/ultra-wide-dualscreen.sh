@@ -3,11 +3,23 @@
 # added; this file is not meant to run straight out of the working tree.
 # @raycast.schemaVersion 1
 # @raycast.title Toggle Ultra-Wide Dual Screen
-# @raycast.mode fullOutput
+# @raycast.mode silent
 #
 # Optional parameters:
 # @raycast.icon 🖥️
 # @raycast.packageName KVM
+
+# Raycast dismisses its window when it loses focus and takes the running script
+# down with it. Tearing the PiP windows down below is itself what steals that
+# focus whenever Raycast was invoked onto one of the virtual displays, so the
+# run would die partway through - which is why the toggle only ever worked with
+# Raycast on the main screen. Re-exec detached and return immediately, so
+# Raycast considers the command finished before any of the work starts.
+LOG=/tmp/ultra-wide-dualscreen.log
+if [ -z "${ULTRAWIDE_DETACHED:-}" ]; then
+    ULTRAWIDE_DETACHED=1 nohup "$0" >"$LOG" 2>&1 &
+    exit 0
+fi
 
 # Ensure aerospace is enabled
 echo "Checking aerospace status..."
@@ -42,6 +54,14 @@ if echo "$displays" | betterdisplaycli get -identifiers | paste -sd '\0' - | sed
     # Re-enable and configure Right monitor PiP
     echo "Configuring Right monitor PiP..."
     betterdisplaycli set -name="Right" -pip=on -targetName="Odyssey G93SC" -originX=50% -originY=0% -width=50% -height=100% -priority=absolute -showTitlebar=off -showShadow=off -unmovable=on -clickthrough=on
+
+    # An origin set in the same command that enables PiP gets clamped out of the
+    # menu bar strip (originY lands at 2.22% instead of 0), which with a 100%
+    # height pushes the top of the window - and the menu bar with it - off the
+    # top of the screen. Re-applying the origin to the existing window sticks.
+    echo "Re-anchoring PiP windows to the bottom of the screen..."
+    betterdisplaycli set -name="Left" -pip -originY=0%
+    betterdisplaycli set -name="Right" -pip -originY=0%
 
      # Put everything in odyssey but the pip windows on the left
      aerospace list-workspaces --all --format "%{workspace} %{monitor-name}" --json | jq -r '.[] | select(.["monitor-name"] != "Left" and .["monitor-name"] != "Right") | .["workspace"]' | while read -r id; do
