@@ -41,8 +41,23 @@ export NIXPKGS_ALLOW_UNFREE=1
 echo "${YELLOW}Starting build for ${HOST}...${NC}"
 nix --extra-experimental-features 'nix-command flakes' build ".#${FLAKE_SYSTEM}" "$@"
 
+# Root switches to the system just built and never evaluates the flake. The
+# private inputs (`secrets` over git+ssh, `wm` over git+https through the gh
+# credential helper) are only reachable as this user: root has no SSH agent and
+# no gh login. `darwin-rebuild switch --flake` re-evaluated as root, which only
+# worked because the build above had already put every input in the store; on
+# a cold store, root's fetch failed (#43).
+#
+# So this is `switch` taken apart. The profile is set the way `switch` sets it,
+# so `rollback` and --list-generations still see the generation, and
+# `activate` runs the system its own binary belongs to, with no evaluation.
+#
+# -H on nix-env: macOS sudo keeps HOME=/Users/<you>, and nix running as root
+# warns that it does not own that directory before falling back to root's.
+system="$(readlink -f ./result)"
 echo "${YELLOW}Switching to new generation...${NC}"
-sudo ./result/sw/bin/darwin-rebuild switch --flake ".#${HOST}" "$@"
+sudo -H nix-env -p /nix/var/nix/profiles/system --set "$system"
+sudo "$system/sw/bin/darwin-rebuild" activate
 
 echo "${YELLOW}Cleaning up...${NC}"
 unlink ./result

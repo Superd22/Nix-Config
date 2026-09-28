@@ -11,3 +11,9 @@ docs/research/
 
 # Claude Code agent worktrees, created in whatever repo it is run in.
 .claude/
+
+# wm's claude module (wemaintain/devenv) links its plugin into
+# ~/.claude/skills/wm-devenv on every repo entry. ~/.claude/skills is a live
+# symlink into modules/config/claude/skills, so the link lands here. It points
+# into the store and is recreated on the next entry.
+modules/config/claude/skills/wm-devenv

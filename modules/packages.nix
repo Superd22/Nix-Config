@@ -60,6 +60,7 @@ with pkgs; [
   # see modules/programs/direnv.nix.
   devenv
 
-  # awscli2 and google-cloud-sdk come with mine.work.wemaintain (#8); a fork
-  # that does not work there does not get them.
+  # awscli2 comes with mine.work.wemaintain (#8); a fork that does not work
+  # there does not get it. google-cloud-sdk comes from the data repo's devenv
+  # shell, the only place it is used (#43).
 ]

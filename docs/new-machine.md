@@ -179,7 +179,7 @@ casks the host lists in `mine.homebrew`. Restart the terminal afterwards.
   `modules/config/raycast/quicklinks.json` has to be imported by hand for the
   same reason, and the rest of Raycast's settings come from a Raycast export.
 - **Cloud logins.** With `mine.work.wemaintain.enable` on, `~/.aws/config`,
-  the RDS CA bundle and the gcloud project are all in place after
+  the RDS helpers and the CA bundle are all in place after
   `build-switch`; nothing is copied from the old Mac. What is left is the
   browser: run `wm-login` once, and again whenever `withPg` starts failing
   with an SSO error. If the machine had a hand-written `~/.aws/config`, it

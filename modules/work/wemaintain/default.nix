@@ -1,6 +1,6 @@
 # WeMaintain's cloud environments (#8): AWS SSO profiles, the RDS IAM database
-# helpers, the DataGrip datasources for the same databases, gcloud, and the
-# Pritunl VPN (#32).
+# helpers, the DataGrip datasources for the same databases, and the Pritunl VPN
+# (#32).
 #
 # Everything a WeMaintain developer needs to reach the cloud from a fresh Mac,
 # behind one flag. Turn on `mine.work.wemaintain.enable`, build-switch, run
@@ -14,43 +14,38 @@
 # those belong to the same "I work at WeMaintain" switch.
 #
 #
-# SINGLE SOURCE OF TRUTH
+# A CONSUMER OF THE SHARED DEVENV REPO (#43)
 #
-# `mine.work.wemaintain.databases` is declared once and feeds two things:
+# The facts and most of the machinery are WeMaintain's, not this config's, and
+# live in the `wm` flake input (wemaintain/devenv), which every WeMaintain repo
+# also imports. One copy, two readers; see its docs/adr/0005.
 #
-#   - a shell function per database (`withPg`, `withPgProd`) that mints an RDS
-#     IAM token with the right AWS profile and runs a command with the usual
-#     DB_* / POSTGRES_* / PG* variables set, so `withPg pnpm start` and
-#     `withPg psql` both just work;
-#   - a DataGrip datasource per database, via `mine.programs.datagrip`, using
-#     the same host, user and profile.
+#   from wm                           here
+#   -------                           ----
+#   lib.data: accounts, profiles,     the ~/.aws/config renderer (upstream only
+#     databases, MCP servers,           renders one into a devenv shell's
+#     the SSO portal, the VPN url       AWS_CONFIG_FILE; DataGrip reads this one)
+#   lib.mkRdsHelpers: withPg & co.    which databases get a helper, and its name
+#   lib.rdsCaBundle                   the DataGrip mapping and its labels
+#                                     `wm-login`, the Pritunl cask, /etc/zshenv
 #
-# Before #8 these were two hand-copied shell functions in modules/programs/zsh
-# and a separate list of datasources in the host file, and they disagreed about
-# staging (backend_dev + prod:back in the shell, wmadmin + prod:sudo in
-# DataGrip). The shell's values won: they are what the helpers used every day,
-# while the DataGrip ones were a dump of whatever the IDE happened to hold. A
-# host that wants the other can override one field.
+# gcloud is gone from here entirely: the data repo, the only one near BigQuery,
+# gets the SDK, the project and both logins from wm's gcloud module, as
+# environment variables rather than an activation script that could fail.
 #
-# Since PRENG-7692 the declaration is not here either. The endpoints, the AWS
-# accounts and profiles and the MCP servers live in the shared devenv repo's
-# `data/`, reached through the `wm` flake input, so this config and the devenv
-# modules read one copy rather than two that agree today. The same drift, one
-# level up. This module is now a CONSUMER of those facts: it still owns how
-# they are presented — the shell helper's name, the DataGrip label — and it
-# still owns everything that does the work.
-#
-# What is here and NOT shared, deliberately: `wm-login`, the ~/.aws/config
-# renderer, the gcloud activation, the DataGrip mapping, the Pritunl cask and
-# the /etc/zshenv fix. PRENG-7698 / 7699 / 7700 / 7703 are what move those.
+# `mine.work.wemaintain.databases` is still declared once and feeds both the
+# helpers and DataGrip, so a host override (`databases.staging.user = ...`)
+# moves both tools at once. Before #8 they were two hand-copied lists and they
+# disagreed about staging (backend_dev + prod:back in the shell, wmadmin +
+# prod:sudo in DataGrip).
 #
 #
 # NOTHING SECRET
 #
 # The whole module is endpoints, account ids, role names and a public CA
-# bundle. The credentials are SSO tokens `aws sso login` puts in ~/.aws/sso,
-# RDS IAM tokens minted per connection, and whatever `gcloud auth login` keeps
-# in ~/.config/gcloud. None of that is in the store or in this repo.
+# bundle. The credentials are SSO tokens `aws sso login` puts in ~/.aws/sso and
+# RDS IAM tokens minted per connection. None of that is in the store or in this
+# repo.
 { config, lib, pkgs, wm, ... }:
 
 let
@@ -62,20 +57,15 @@ let
   # See wm's docs/adr/0005-one-declaration-two-consumers.md.
   data = wm.lib.data;
   user = config.mine.user.name;
-  home = config.users.users.${user}.home;
-
-  # ~/.aws/rds-ca-cert.pem used to be a manual prerequisite that the helpers
-  # assumed existed (docs/new-machine.md). It is the RDS global CA bundle,
-  # https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem, vendored
-  # rather than fetched so the build has no network dependency and the file
-  # does not change under you when AWS adds a region. Byte-identical to the
-  # copy that was on the machine this module was written on.
-  rdsCaCert = "${home}/.aws/rds-ca-cert.pem";
 
   # ~/.aws/config, in the "legacy" SSO layout (sso_start_url on every profile
   # rather than a shared [sso-session]). It is what `aws sso login` with no
   # profile, DataGrip's AWS toolkit and the CLI all agree on, and one login
   # covers every profile with the same start URL.
+  #
+  # Rendered here because wm's aws module only renders one into a devenv
+  # shell's AWS_CONFIG_FILE, and DataGrip and the helpers outside a repo read
+  # this file instead.
   awsConfig =
     let
       a = cfg.aws;
@@ -100,59 +90,43 @@ let
 
     '' + lib.concatStringsSep "\n" (lib.mapAttrsToList profileIni a.profiles);
 
-  # One `with<Env>` function per database that asks for one. The token is
-  # minted fresh on every call: RDS IAM tokens live 15 minutes, which is why
-  # this is a function that wraps a command rather than an `export`.
+  # The same executables a WeMaintain repo gets from wm's rds-shell module, fed
+  # this module's `databases` rather than the shared ones so a host override
+  # reaches them. Each mints a fresh RDS IAM token per call and execs its
+  # arguments with DB_*, POSTGRES_* and PG* set; see wm's
+  # modules/rds-shell/helpers.nix.
   #
-  # DB_* and POSTGRES_* are what the WeMaintain services read; PG* are libpq's
-  # own, so `withPg psql` and `withPg pg_dump` need no further arguments
-  # (psql itself is not installed by this module).
-  shellFunction = db: ''
-    ${db.shellFunction}() {
-      if [ $# -eq 0 ]; then
-        echo "usage: ${db.shellFunction} <command> [args...]  # ${db.user}@${db.host}" >&2
-        return 1
-      fi
-      local host=${lib.escapeShellArg db.host}
-      local user=${lib.escapeShellArg db.user}
-      local password
-      password=$(aws rds generate-db-auth-token \
-        --profile ${lib.escapeShellArg db.awsProfile} \
-        --hostname "$host" --port ${toString db.port} \
-        --region ${lib.escapeShellArg db.region} \
-        --username "$user") || return $?
-      DB_HOST="$host" POSTGRES_HOST="$host" PGHOST="$host" \
-      DB_PORT=${toString db.port} POSTGRES_PORT=${toString db.port} PGPORT=${toString db.port} \
-      DB_USER="$user" POSTGRES_USERNAME="$user" PGUSER="$user" \
-      DB_PASSWORD="$password" POSTGRES_PASSWORD="$password" PGPASSWORD="$password" \
-      DB_SSL_CA=${lib.escapeShellArg rdsCaCert} PGSSLROOTCERT=${lib.escapeShellArg rdsCaCert} PGSSLMODE=verify-full \
-      PGDATABASE=${lib.escapeShellArg db.database} \
-      "$@"
-    }
-  '';
+  # Upstream names only staging and prod by default. prod-write gets its
+  # helper because this config names it, loudly: `dangerWithPgProdWrite`.
+  helperNames = lib.mapAttrs (_: db: db.shellFunction)
+    (lib.filterAttrs (_: db: db.shellFunction != null) cfg.databases);
 
-  shellDatabases = lib.filter (db: db.shellFunction != null) (lib.attrValues cfg.databases);
+  rdsHelpers = wm.lib.mkRdsHelpers {
+    inherit pkgs;
+    names = helperNames;
+    databases = cfg.databases;
+  };
 
-  # The one interactive step nix cannot do: the browser logins. Every one of
-  # them is gated by a consent screen no CLI can drive — AWS and Google because
-  # the SSO tokens expire (after hours and after days respectively), Pritunl
-  # because minting a profile is a WeMaintain SSO login on the server's own web
-  # UI. So this is both the one command to run on a new Mac and what to run
-  # when `withPg` starts failing with an SSO error.
+  # The interactive steps nix cannot do. AWS because the SSO token expires
+  # after hours, Pritunl because minting a profile is a WeMaintain SSO login on
+  # the server's own web UI. So this is both the one command to run on a new
+  # Mac and what to run when `withPg` starts failing with an SSO error.
   #
   # The VPN step is the odd one out in being once-per-machine rather than
   # per-expiry: it is a no-op the moment a profile exists, so `wm-login` with no
   # argument stays the right thing to type either way (#32).
+  #
+  # gcloud's logins are no longer here: wm's gcloud module offers both on entry
+  # to the data repo, which is the only place they are needed.
   wm-login = pkgs.writeShellApplication {
     name = "wm-login";
     runtimeInputs = [ pkgs.awscli2 ]
-      ++ lib.optional cfg.gcp.enable pkgs.google-cloud-sdk
       ++ lib.optional cfg.vpn.enable pkgs.jq;
     text = ''
       what=''${1:-all}
       case "$what" in
-        aws|gcp|${lib.optionalString cfg.vpn.enable "vpn|"}all) ;;
-        *) echo "usage: wm-login [aws|gcp|${lib.optionalString cfg.vpn.enable "vpn|"}all]" >&2; exit 2 ;;
+        aws|${lib.optionalString cfg.vpn.enable "vpn|"}all) ;;
+        *) echo "usage: wm-login [aws|${lib.optionalString cfg.vpn.enable "vpn|"}all]" >&2; exit 2 ;;
       esac
 
       ${lib.optionalString cfg.vpn.enable ''
@@ -227,22 +201,6 @@ let
         aws sso login
       fi
 
-      ${lib.optionalString cfg.gcp.enable ''
-        if [ "$what" = gcp ] || [ "$what" = all ]; then
-          echo "==> Google Cloud (${cfg.email}, project ${cfg.gcp.project})"
-          # --force, or gcloud first tries to reuse and refresh the credentials
-          # it already holds for this account, and a refresh past the
-          # Workspace session window is "Reauthentication required. Please
-          # enter your password:" in the terminal. With it, every run is the
-          # browser SSO and nothing else.
-          gcloud auth login --force ${lib.escapeShellArg cfg.email}
-          # Application Default Credentials: what SDKs and Terraform use, as
-          # opposed to the gcloud CLI itself. A separate consent screen.
-          gcloud auth application-default login
-          gcloud auth application-default set-quota-project ${lib.escapeShellArg cfg.gcp.project}
-        fi
-      ''}
-
       ${lib.optionalString cfg.vpn.enable ''
         if [ "$what" = vpn ] || [ "$what" = all ]; then
           echo "==> Pritunl VPN (${cfg.vpn.url})"
@@ -311,9 +269,11 @@ let
         default = null;
         example = "withPg";
         description = ''
-          Name of the zsh function to generate for this database, or null for
+          Name of the helper command to install for this database, or null for
           a DataGrip-only entry. `<name> <command>` runs the command with
-          DB_*, POSTGRES_* and PG* set to a fresh IAM token.
+          DB_*, POSTGRES_* and PG* set to a fresh IAM token. An executable
+          from wm's `lib.mkRdsHelpers` since #43, not a zsh function, so it
+          works from bash and scripts too; the option keeps its old name.
         '';
       };
       datagrip = {
@@ -343,16 +303,6 @@ in
   # `mine.work.wemaintain.enable` is declared in modules/options.nix, with the
   # rest of the opt-in flags. Only the schema lives here.
   options.mine.work.wemaintain = {
-    email = lib.mkOption {
-      type = lib.types.str;
-      example = "ada@wemaintain.com";
-      description = ''
-        Your WeMaintain Google account. Distinct from `mine.user.email`, which
-        is for commit authorship and may well be a personal address. Used as
-        the gcloud account.
-      '';
-    };
-
     aws = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -362,19 +312,22 @@ in
 
       ssoStartUrl = lib.mkOption {
         type = lib.types.str;
-        default = "https://wemaintainv2.awsapps.com/start";
+        default = data.aws.ssoStartUrl;
+        defaultText = lib.literalExpression "wm.lib.data.aws.ssoStartUrl";
         description = "IAM Identity Center portal.";
       };
 
       ssoRegion = lib.mkOption {
         type = lib.types.str;
-        default = "eu-west-1";
+        default = data.aws.ssoRegion;
+        defaultText = lib.literalExpression "wm.lib.data.aws.ssoRegion";
         description = "Region IAM Identity Center is deployed in.";
       };
 
       region = lib.mkOption {
         type = lib.types.str;
-        default = "eu-west-1";
+        default = data.aws.region;
+        defaultText = lib.literalExpression "wm.lib.data.aws.region";
         description = "Default region for every profile, and for RDS tokens.";
       };
 
@@ -404,25 +357,11 @@ in
       type = lib.types.attrsOf (lib.types.submodule databaseModule);
       default = { };
       description = ''
-        RDS databases reached over IAM auth. Each one becomes a shell helper
+        RDS databases reached over IAM auth. Each one becomes a helper command
         (when `shellFunction` is set) and a DataGrip datasource (when
         `datagrip.enable` is), from the one declaration. The standard ones
         are declared by this module; a host adds to them.
       '';
-    };
-
-    gcp = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Install `gcloud` and point its active configuration at the project below.";
-      };
-
-      project = lib.mkOption {
-        type = lib.types.str;
-        default = "data-stack-389913";
-        description = "Default gcloud project, and the ADC quota project.";
-      };
     };
 
     vpn = {
@@ -437,7 +376,8 @@ in
 
       url = lib.mkOption {
         type = lib.types.str;
-        default = "https://vpn.wemaintain.io/login";
+        default = data.vpn.url;
+        defaultText = lib.literalExpression "wm.lib.data.vpn.url";
         description = ''
           The Pritunl server's login page, opened in the browser by
           `wm-login vpn`. It is behind WeMaintain SSO, which is why the profile
@@ -470,8 +410,8 @@ in
     # DataGrip derives a datasource's uuid from it and so owns local IDE state
     # that must stay stable here.
     #
-    # A name declared in two places can still drift from the devenv side's;
-    # PRENG-7700 closes that by defaulting it from the record's key.
+    # staging and prod match the names wm's rds-shell gives them by default, so
+    # `withPg` means the same thing inside a repo's shell and outside one.
     mine.work.wemaintain.databases =
       let
         presentation = {
@@ -489,6 +429,8 @@ in
           })
         data.databases;
 
+    # wm's data/check.nix already holds the shared data to these. They are here
+    # for what a host adds or overrides on top of it.
     assertions =
       [
         {
@@ -524,14 +466,13 @@ in
     # command to remember on a new machine.
     environment.systemPackages =
       [ wm-login ]
-      ++ lib.optional cfg.aws.enable pkgs.awscli2
-      ++ lib.optional cfg.gcp.enable pkgs.google-cloud-sdk;
+      ++ lib.optionals cfg.aws.enable [ pkgs.awscli2 ]
+      ++ lib.optional (cfg.aws.enable && helperNames != { }) rdsHelpers;
 
     # The cask, not as a preference but as this module's implementation, the way
     # modules/desktop/betterdisplay declares its own: `wm-login vpn` runs a
-    # binary inside /Applications/Pritunl.app. It used to be a bare entry in the
-    # host's cask list, where it looked like a personal choice; the VPN it
-    # reaches is a WeMaintain one, so it belongs behind this flag (#32).
+    # binary inside /Applications/Pritunl.app. wm's vpn module drives the same
+    # app on macOS and does not install it either (#32).
     homebrew.casks = lib.optional cfg.vpn.enable "pritunl";
 
     # DataGrip sees the same databases, if it is enabled at all. The datagrip
@@ -584,48 +525,17 @@ in
       fi
     '';
 
-    home-manager.users.${user} = { lib, ... }: lib.mkMerge [
-      (lib.mkIf cfg.aws.enable {
-        # Symlinks into the store, so `aws configure` cannot write them. That
-        # is the point: the config is the declaration above. The SSO token
-        # cache (~/.aws/sso) and CLI cache (~/.aws/cli) are untouched.
-        home.file.".aws/config".text = awsConfig;
-        home.file.".aws/rds-ca-cert.pem".source = ./rds-global-bundle.pem;
+    home-manager.users.${user} = lib.mkIf cfg.aws.enable {
+      # Symlinks into the store, so `aws configure` cannot write them. That
+      # is the point: the config is the declaration above. The SSO token
+      # cache (~/.aws/sso) and CLI cache (~/.aws/cli) are untouched.
+      home.file.".aws/config".text = awsConfig;
 
-        programs.zsh.initContent = lib.mkIf (shellDatabases != [ ]) (
-          "# WeMaintain RDS helpers, generated by modules/work/wemaintain.\n"
-          + lib.concatMapStringsSep "\n" shellFunction shellDatabases
-        );
-      })
-
-      (lib.mkIf cfg.gcp.enable {
-        # gcloud keeps its configuration in files it rewrites itself, so this
-        # is `gcloud config set` at activation rather than a store symlink it
-        # could not write to. Idempotent, and local: nothing here needs a
-        # login. `wm-login` does the part that does.
-        # `gcloud config set core/project` looks the project up over the
-        # network with whatever credentials are on disk, and refreshes them
-        # first. With an expired token that is "cannot prompt during
-        # non-interactive execution", a non-zero exit, and nix-darwin's
-        # `set -e` activation dying one line before it links
-        # /run/current-system: the generation is built, home files are in
-        # place, and nothing new is on PATH. So: never load credentials for
-        # this (the lookup then merely warns, silenced by --verbosity=error),
-        # and do not call `set` at all when `get`, which is local, already
-        # answers what is wanted.
-        home.activation.wemaintainGcloud = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          export CLOUDSDK_CORE_DISABLE_PROMPTS=1
-          export CLOUDSDK_AUTH_DISABLE_CREDENTIALS=true
-          gcloud=${pkgs.google-cloud-sdk}/bin/gcloud
-          set_if_differs() {
-            if [ "$("$gcloud" config get "$1" --verbosity=error 2>/dev/null || true)" != "$2" ]; then
-              $DRY_RUN_CMD "$gcloud" config set "$1" "$2" --quiet --verbosity=error >/dev/null
-            fi
-          }
-          set_if_differs core/project ${lib.escapeShellArg cfg.gcp.project}
-          set_if_differs core/account ${lib.escapeShellArg cfg.email}
-        '';
-      })
-    ];
+      # The helpers point at the bundle's store path and do not need this.
+      # It stays for everything else that learned this path: backend's
+      # manual-testing doc tells people to download the bundle here, and
+      # scripts and .env files follow it.
+      home.file.".aws/rds-ca-cert.pem".source = wm.lib.rdsCaBundle;
+    };
   };
 }

@@ -37,15 +37,21 @@
     };
     # WeMaintain's shared devenv repo. Imported for `wm.lib.data` — the AWS
     # accounts and profiles, the RDS endpoints and the MCP servers that
-    # modules/work/wemaintain used to declare itself. A flake, not
+    # modules/work/wemaintain used to declare itself — and for the RDS helpers
+    # and CA bundle it used to implement (#43). A flake, not
     # `flake = false`: the outputs are the point.
     #
     # git+https rather than github:, like `secrets` is git+ssh: the repo is
     # private, and git+https runs real git, which picks up the credential
     # helper modules/programs/git.nix installs. `github:` reads only nix.conf's
     # access-tokens and would 404. See the repo's docs/adr/0001.
+    #
+    # Its nixpkgs follows ours. Nothing here evaluates wm's own packages —
+    # `lib.mkRdsHelpers` takes our `pkgs` — so its pin would only be a second
+    # nixpkgs in the lock for nothing.
     wm = {
       url = "git+https://github.com/wemaintain/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
   outputs = { self, darwin, nix-homebrew, homebrew-bundle, homebrew-core, homebrew-cask, deskflowHomebrewTap, openfgaTap, home-manager, nixpkgs, agenix, secrets, wm } @inputs:

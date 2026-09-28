@@ -42,19 +42,16 @@
 
   # Work (#8). One flag: ~/.aws/config with every SSO profile, the RDS CA
   # bundle, `withPg`/`withPgProd`, the DataGrip datasources for the same
-  # databases, gcloud on the data project, the Pritunl cask and its VPN
-  # profile (#32), and `wm-login` to do all the browser halves. The profiles,
-  # accounts and databases are declared by the module; anything personal on
-  # top of them would go here as another `mine.work.wemaintain.*` entry.
+  # databases, the Pritunl cask and its VPN profile (#32), and `wm-login` to
+  # do the browser halves. The profiles, accounts and databases come from the
+  # shared devenv repo through the module (#43); anything personal on top of
+  # them would go here as another `mine.work.wemaintain.*` entry.
   #
   # Note the staging datasource in DataGrip is now backend_dev over prod:back,
   # as the shell helper always was, rather than the wmadmin over prod:sudo it
   # had by hand. `mine.work.wemaintain.databases.staging.user = "wmadmin"`
   # would put it back for both tools at once.
-  mine.work.wemaintain = {
-    enable = true;
-    email = "david@wemaintain.com";
-  };
+  mine.work.wemaintain.enable = true;
 
   # Claude Code's skills, settings and MCP servers (#36). The WeMaintain MCP
   # servers come from the work block above; this flag is what wires ~/.claude

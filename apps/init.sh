@@ -108,7 +108,7 @@ banner() {
 3. Import the key bundle from \`keys export\`
 4. \`keys doctor\`
 5. \`build-switch\` (long; asks for sudo)
-6. \`wm-login\`: AWS, gcloud and the VPN profile, in the browser
+6. \`wm-login\`: AWS and the VPN profile, in the browser
 7. The short list of things nix cannot do
 MD
   echo
@@ -411,13 +411,13 @@ push_host_if_new() {
   fi
 }
 
-# The browser logins nix cannot do (#29, #32): AWS SSO, gcloud, and minting
+# The browser logins nix cannot do (#29, #32): AWS SSO and minting
 # the VPN profile. Only on hosts with the WeMaintain module on, which is what
 # puts wm-login into the system profile. The shell running init predates the
 # switch, so it is reached by absolute path.
 WM_LOGIN=/run/current-system/sw/bin/wm-login
 work_logins() {
-  step "6 · Work logins" "AWS SSO, gcloud and the VPN profile, each a browser consent screen"
+  step "6 · Work logins" "AWS SSO and the VPN profile, each a browser consent screen"
   if [ ! -x "$WM_LOGIN" ]; then
     note "This host has no wm-login (mine.work.wemaintain.enable is off); nothing to do."
     return
