@@ -51,9 +51,12 @@ nix --extra-experimental-features 'nix-command flakes' build ".#${FLAKE_SYSTEM}"
 # So this is `switch` taken apart. The profile is set the way `switch` sets it,
 # so `rollback` and --list-generations still see the generation, and
 # `activate` runs the system its own binary belongs to, with no evaluation.
+#
+# -H on nix-env: macOS sudo keeps HOME=/Users/<you>, and nix running as root
+# warns that it does not own that directory before falling back to root's.
 system="$(readlink -f ./result)"
 echo "${YELLOW}Switching to new generation...${NC}"
-sudo nix-env -p /nix/var/nix/profiles/system --set "$system"
+sudo -H nix-env -p /nix/var/nix/profiles/system --set "$system"
 sudo "$system/sw/bin/darwin-rebuild" activate
 
 echo "${YELLOW}Cleaning up...${NC}"
