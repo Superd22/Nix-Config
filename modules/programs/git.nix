@@ -18,7 +18,9 @@
 	    editor = "vim";
         autocrlf = "input";
       };
-      commit.gpgsign = true;
+      # Opt-in (#5): without a GPG key for the commit email, signing makes
+      # every commit fail.
+      commit.gpgsign = osConfig.mine.user.signCommits;
 
       # `gh auth setup-git` equivalent
       credential."https://github.com".helper = [

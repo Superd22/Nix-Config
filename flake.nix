@@ -62,7 +62,7 @@
         default = with pkgs; mkShell {
           # gum is here for running apps/init.sh from source (the CI smoke test
           # does, with stubs in front of it on PATH) and for recording it.
-          nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey gum ];
+          nativeBuildInputs = with pkgs; [ bashInteractive git age age-plugin-yubikey gum jq ];
           shellHook = with pkgs; ''
             export EDITOR=vim
           '';
@@ -87,13 +87,16 @@
         rollback = mkScript "rollback" [ ];
         # Moves the three irreplaceable keys between machines; see
         # apps/keys.sh and docs/new-machine.md. `nix` itself is deliberately
-        # not pinned here: the one on PATH is the Determinate install.
-        keys = mkScript "keys" (with pkgs; [ age gnupg gnutar gzip openssh ]);
+        # not pinned here: the one on PATH is the Determinate install. gh is
+        # for `new-ssh` / `new-gpg`, which register the keys they make.
+        keys = mkScript "keys" (with pkgs; [ age gnupg gnutar gzip openssh gh ]);
         # The new-Mac wizard (#5), reached from bootstrap.sh. gum draws the
         # prompts (15 MiB, one dependency); keys and build-switch are the
         # same builds as `nix run .#keys` / `.#build-switch`, not re-evaluated
-        # through a second flake call.
-        init = mkScript "init" (with pkgs; [ gum findutils openssh keys build-switch ]);
+        # through a second flake call. gh is the git credential for the
+        # someone-else path before the first switch installs one (the repo
+        # copy, and the build that fetches `wm`); jq reads the host's options.
+        init = mkScript "init" (with pkgs; [ gum findutils openssh jq gh keys build-switch ]);
       };
       # Every directory under hosts/ except the shared `common/` is a machine,
       # named after its hostname so `hostname -s` picks the right one.

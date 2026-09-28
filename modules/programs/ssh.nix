@@ -1,4 +1,8 @@
-{ config, ... }:
+{ config, lib, osConfig, ... }:
+
+let
+  githubKey = osConfig.mine.user.githubKey;
+in
 
 {
   programs.ssh = {
@@ -13,10 +17,14 @@
       "*" = {
         AddKeysToAgent = "yes";
       };
+    } // lib.optionalAttrs (githubKey != null) {
+      # Pinned, so a private git+ssh:// input is fetched with the key GitHub
+      # knows rather than whichever the agent offers first. Which key that is
+      # belongs to the person, not this module (#5).
       "github.com" = {
         IdentitiesOnly = true;
         IdentityFile = [
-          "${config.home.homeDirectory}/.ssh/id_rsa"
+          "${config.home.homeDirectory}/.ssh/${githubKey}"
         ];
       };
     };

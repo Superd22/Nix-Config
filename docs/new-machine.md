@@ -4,8 +4,9 @@ Two situations, one document:
 
 - **Migrating**: you have the old Mac in front of you and want the new one to
   be the same machine, then wipe the old one. This is the main path.
-- **From scratch**: no old Mac (or a fork of this repo by someone else). See
-  [From scratch](#from-scratch) at the end; everything else still applies.
+- **From scratch**: no old Mac, or someone else's copy of this repo (a
+  WeMaintain colleague, or anyone). `bootstrap.sh` asks who you are; pick
+  "I'm someone else". See [From scratch](#from-scratch) at the end.
 
 Order matters. The keys have to be in place before the flake will even
 evaluate, and one of them cannot be regenerated, so the migration path is
@@ -20,9 +21,9 @@ commits to the secrets store, so they cannot live in it:
 
 | File | Role | If lost |
 | --- | --- | --- |
-| `~/.ssh/id_rsa` | GitHub. The `secrets` flake input is `git+ssh://github.com/superd22/nix-secrets`, and `modules/programs/ssh.nix` pins github.com to this key with `IdentitiesOnly`. | The flake cannot fetch its inputs, so it does not evaluate. Replaceable: generate a new one and add it to GitHub. |
+| `~/.ssh/id_rsa` | GitHub. The `secrets` flake input is `git+ssh://github.com/superd22/nix-secrets`, and `mine.user.githubKey = "id_rsa"` makes `modules/programs/ssh.nix` pin github.com to this key with `IdentitiesOnly`. | The flake cannot fetch its inputs, so it does not evaluate. Replaceable: generate a new one and add it to GitHub. |
 | `~/.ssh/id_ed25519` | The agenix identity. Its public half is the `david` recipient in `nix-secrets/secrets.nix`; `modules/secrets.nix` decrypts with it during activation. | **Every `.age` file is undecryptable forever.** Not replaceable without a machine that still holds it. |
-| GPG key for the commit email | `modules/programs/git.nix` sets `commit.gpgsign = true`. No key id is pinned; gpg picks the secret key whose user id matches `mine.user.email`. | Commits are rejected until a new key is made and uploaded to GitHub. |
+| GPG key for the commit email | `mine.user.signCommits = true` turns on `commit.gpgsign`. No key id is pinned; gpg picks the secret key whose user id matches `mine.user.email`. | Commits are rejected until a new key is made and uploaded to GitHub. |
 
 They are one identity that moves with you, not per-machine keys. Nothing on
 GitHub or in `nix-secrets` changes when you change laptops.
@@ -215,20 +216,65 @@ or re-keyed in `nix-secrets`. The old disk simply has to stop existing:
 
 ## From scratch
 
-No old Mac, or a fork of this repo. Steps 2 and 3 above apply unchanged; the
-keys are generated instead of imported.
+No old Mac, or your own copy of this repo. Run the same one-liner and answer
+"I'm someone else":
 
 ```sh
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -C "you@example.com"      # GitHub
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C "you@example.com"      # agenix
-gh auth login
-gh ssh-key add ~/.ssh/id_rsa.pub --title "$(hostname -s)"
-gpg --quick-generate-key "Your Name <you@example.com>" ed25519 sign 0
-gpg --armor --export you@example.com | gh gpg-key add -
+curl -fsSL https://raw.githubusercontent.com/Superd22/Nix-Config/main/bootstrap.sh | sh
 ```
 
-Then the secrets repo. It is a private repo containing `secrets.nix` and the
-`.age` files; the flake input `secrets` in `flake.nix` points at it.
+The wizard (`apps/init.sh`, the "Someone else" section) asks, in order:
+
+1. **Whether you work at WeMaintain.** Yes is the default. Everything
+   WeMaintain-specific hangs off that one answer.
+2. **Where your copy lives.** A private copy on your GitHub (a `--mirror`
+   push, with this repo kept as the `upstream` remote so you can rebase), a
+   public `gh repo fork`, or just the clone for now. GitHub has no private
+   fork, hence the first option.
+3. **The hostname.** Keep the Mac's, or rename it. `hosts/<name>` starts
+   from `hosts/example`, never from one of David's hosts.
+4. **Name and email** for commits (`mine.user`). The account name is not
+   asked: it has to be the one you are logged in as.
+5. **At WeMaintain only:** runs
+   `curl -fsSL https://wemaintain.github.io/devenv/bootstrap.sh | sh -s -- --nix-config`,
+   which logs you in to GitHub and proves your account can see
+   `wemaintain/devenv`. A missing org invite shows up here, not as a 404
+   halfway through a build.
+6. **What to keep.** Every `mine.desktop`, `mine.services` and
+   `mine.programs` flag, read from `modules/options.nix`, with `hosts/example`
+   as the defaults, then the Homebrew casks. DataGrip is preselected at
+   WeMaintain. Claude Code is asked about separately, because it points
+   `~/.claude` into this repo (see `docs/two-paths.md`).
+7. **Keys.** An SSH key GitHub knows you by (reuse one in `~/.ssh`, make
+   `id_ed25519`, or none if you use git over https through `gh`), written to
+   `mine.user.githubKey`. GPG only if you want signed commits
+   (`mine.user.signCommits`, off by default).
+8. `keys doctor`, then `build-switch`, then `wm-login` at WeMaintain.
+
+It writes one file, `hosts/<name>/default.nix`, shows it as a diff and commits
+it. Re-running `init` reads that file back as the defaults, so a second run
+means "change what is on", not starting over. Every answer can come from the
+environment (`INIT_WHO=other`, `INIT_WORK`, `INIT_FULLNAME`, `INIT_EMAIL`, …;
+`nix run .#init -- --help`), which is how CI runs it.
+
+### The keys by hand
+
+What step 7 runs, if you would rather:
+
+```sh
+nix run .#keys -- new-ssh id_ed25519 you@example.com     # make or reuse, add to GitHub
+nix run .#keys -- new-gpg "Your Name" you@example.com    # only with signCommits
+```
+
+Then set `mine.user.githubKey = "id_ed25519";` (and `signCommits = true;`) in
+your host.
+
+### Secrets
+
+Off by default, and the wizard leaves them off: nothing in this config needs a
+secret today. When something does, the secrets repo is a private repo holding
+`secrets.nix` and the `.age` files, and the `secrets` flake input points at
+it. The agenix identity is `~/.ssh/id_ed25519`:
 
 ```sh
 gh repo create --private you/nix-secrets --clone
@@ -245,13 +291,24 @@ nix run github:ryantm/agenix -- -e github-npm-token.age   # paste the token
 git add . && git commit -m "first secret" && git push
 ```
 
-Point `inputs.secrets.url` in `flake.nix` at the new repo, set
-`mine.secrets.enable = true` in your host, and run `doctor`. If you would
-rather not have a secrets repo at all, leave `mine.secrets.enable` at its
-default `false` and the input is never fetched.
+Point `inputs.secrets.url` in `flake.nix` at the new repo, run
+`nix flake update secrets`, set `mine.secrets.enable = true` in your host, and
+run `doctor`. Once the keys exist, `nix run .#keys -- export` gives you the
+backup bundle; make it now, not when the laptop is already broken.
 
-Once the keys exist, `nix run .#keys -- export` gives you the backup bundle;
-make it now, not when the laptop is already broken.
+### `nix flake update` and private inputs
+
+Locking fetches every input, and two of them are private: `secrets`
+(`superd22/nix-secrets`) and `wm` (`wemaintain/devenv`). A host that does not
+use them never fetches them to evaluate or build, but a bare
+`nix flake update` tries to relock them and fails if your account cannot see
+them. There is no way to make a flake input conditional. Instead:
+
+- update the inputs you use by name:
+  `nix flake update nixpkgs home-manager darwin nix-homebrew`;
+- point `secrets` at your own repo (above), and it stops being someone
+  else's private input;
+- outside WeMaintain, leave `wm` locked where upstream has it.
 
 ## Later: a YubiKey
 

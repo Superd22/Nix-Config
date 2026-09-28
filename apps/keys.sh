@@ -20,8 +20,17 @@
 #   keys export [OUT.age]    on the old Mac: bundle the three into one file
 #   keys import BUNDLE.age   on the new Mac: put them back
 #   keys doctor              before build-switch: prove every key is in place
+#   keys new-ssh NAME EMAIL  from scratch: make (or reuse) ~/.ssh/NAME, add it to GitHub
+#   keys new-gpg NAME EMAIL  from scratch: make a signing key, add it to GitHub
 #
 # `doctor` is the only step that has to pass before the old Mac is wiped.
+#
+# The three above are David's. Someone else's host (#5) may name a different
+# GitHub key (`mine.user.githubKey`), not sign commits (`mine.user.signCommits`)
+# and have no secrets (`mine.secrets.enable`); doctor reads all three from the
+# host and checks only what it uses. `new-ssh` and `new-gpg` are the "From
+# scratch" recipe of docs/new-machine.md, so the init wizard calls them rather
+# than carrying a copy.
 
 RED=$'\033[1;31m'
 GREEN=$'\033[1;32m'
@@ -41,6 +50,8 @@ Usage:
   keys export [OUT.age]    on the old Mac: bundle the three into one file
   keys import BUNDLE.age   on the new Mac: put them back (--force to overwrite)
   keys doctor              before build-switch: prove every key is in place
+  keys new-ssh NAME EMAIL  make (or reuse) ~/.ssh/NAME and add it to GitHub
+  keys new-gpg NAME EMAIL  make a GPG signing key and add it to GitHub
 
 See docs/new-machine.md.
 EOF
@@ -229,15 +240,16 @@ check_private_key() {
 }
 
 check_github() {
+  local key="$1"
   # -i and IdentitiesOnly rather than relying on ~/.ssh/config: on a fresh Mac
   # home-manager has not written that file yet.
   local reply
   reply="$(ssh -o BatchMode=yes -o ConnectTimeout=10 -o IdentitiesOnly=yes \
-              -i "$GITHUB_KEY" -T git@github.com 2>&1 || true)"
+              -i "$key" -T git@github.com 2>&1 || true)"
   if echo "$reply" | grep -q "successfully authenticated"; then
-    pass "id_rsa is accepted by GitHub"
+    pass "$(basename "$key") is accepted by GitHub"
   else
-    fail "GitHub does not accept id_rsa. Without it the private 'secrets' input cannot be fetched and the flake will not evaluate."
+    fail "GitHub does not accept $(basename "$key"). git over ssh fails without it, and so does fetching a private git+ssh:// input like 'secrets'."
     echo "        ssh said: $(echo "$reply" | head -1)"
   fi
 }
@@ -292,15 +304,28 @@ cmd_doctor() {
 
   echo "Checking keys for ${host} (config: ${flake})"
 
-  # Where the commit email comes from, in order of preference: the host's
-  # declaration in this config (works before the first build-switch), then
-  # whatever git already has.
-  local email=""
+  # What this host uses, read from its declaration in this config (which works
+  # before the first build-switch): one line each of email, GitHub key file
+  # name ("" for none), sign commits and secrets on ("1" or ""). None of these
+  # force the private inputs. When the host cannot be read, assume David's
+  # full set, which is the strict answer.
+  local email="" github="id_rsa" sign=1 secrets=1
   if [ -f "$flake/flake.nix" ]; then
-    email="$(nix --extra-experimental-features 'nix-command flakes' eval --raw \
-               "${flake}#darwinConfigurations.${host}.config.mine.user.email" 2>/dev/null || true)"
     if [ -d "$flake/hosts/$host" ]; then
       pass "hosts/$host exists, so build-switch knows this machine"
+      local facts
+      if facts="$(nix --extra-experimental-features 'nix-command flakes' eval --raw \
+                   "${flake}#darwinConfigurations.${host}.config.mine" --apply '
+                     m: builtins.concatStringsSep "\n" [
+                       m.user.email
+                       (if m.user.githubKey == null then "" else m.user.githubKey)
+                       (if m.user.signCommits then "1" else "")
+                       (if m.secrets.enable then "1" else "")
+                     ]' 2>/dev/null)"; then
+        { IFS= read -r email; IFS= read -r github; IFS= read -r sign; IFS= read -r secrets; } <<<"$facts" || true
+      else
+        warn "could not evaluate hosts/$host; checking every key"
+      fi
     else
       fail "hosts/$host does not exist; build-switch defaults to \$(hostname -s). Create it (copy hosts/example) or rename the Mac."
     fi
@@ -309,11 +334,25 @@ cmd_doctor() {
   fi
   [ -n "$email" ] || email="$(git_email)"
 
-  check_private_key "$GITHUB_KEY" "GitHub" && check_github
-  if check_private_key "$AGENIX_KEY" "agenix identity" && [ -f "$flake/flake.nix" ]; then
-    check_agenix_recipient "$flake"
+  if [ -n "$github" ]; then
+    check_private_key "$SSH_DIR/$github" "GitHub" && check_github "$SSH_DIR/$github"
+  else
+    pass "no GitHub ssh key pinned (mine.user.githubKey is null); git to GitHub goes over https through gh"
   fi
-  check_gpg "$email"
+
+  if [ -n "$secrets" ]; then
+    if check_private_key "$AGENIX_KEY" "agenix identity" && [ -f "$flake/flake.nix" ]; then
+      check_agenix_recipient "$flake"
+    fi
+  else
+    pass "no secrets (mine.secrets.enable is off), so no agenix identity is needed"
+  fi
+
+  if [ -n "$sign" ]; then
+    check_gpg "$email"
+  else
+    pass "commits are not signed (mine.user.signCommits is off), so no GPG key is needed"
+  fi
 
   if [ -e "$DEAD_KEY" ]; then
     warn "$DEAD_KEY exists. It has the agenix name and is not the agenix identity; nothing reads it. Delete it so it cannot be mistaken for the real one."
@@ -328,9 +367,81 @@ cmd_doctor() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# new-ssh / new-gpg: the "From scratch" recipe, for a person with no bundle.
+#
+# Both end by registering the public half with GitHub through gh, which needs
+# a scope a plain `gh auth login` does not grant; gh asks for it in the
+# browser. If that fails the key is still made, and the manual command is
+# printed instead.
+# ---------------------------------------------------------------------------
+
+gh_scope() {
+  local scope="$1"
+  if ! gh auth status -h github.com >/dev/null 2>&1; then
+    gh auth login -h github.com -w -p https --skip-ssh-key -s "$scope"
+  elif ! gh auth status -h github.com 2>&1 | grep -q "$scope"; then
+    gh auth refresh -h github.com -s "$scope"
+  fi
+}
+
+cmd_new_ssh() {
+  local name="${1:-}" email="${2:-}"
+  [ -n "$name" ] && [ -n "$email" ] || usage
+  local key="$SSH_DIR/$name"
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+  if [ -f "$key" ]; then
+    echo "$key exists; reusing it."
+  else
+    ssh-keygen -q -t ed25519 -f "$key" -C "$email"
+    echo "${GREEN}Made $key${NC}"
+  fi
+  [ -f "$key.pub" ] || ssh-keygen -y -f "$key" > "$key.pub"
+
+  local material
+  material="$(awk '{ print $2 }' "$key.pub")"
+  if gh ssh-key list 2>/dev/null | grep -qF "$material"; then
+    echo "GitHub already knows $name."
+    return
+  fi
+  if gh_scope admin:public_key && gh ssh-key add "$key.pub" --title "$(hostname -s)"; then
+    echo "${GREEN}Added $name to GitHub.${NC}"
+  else
+    echo "${YELLOW}Could not add it to GitHub.${NC} By hand:  gh ssh-key add $key.pub --title $(hostname -s)" >&2
+  fi
+}
+
+cmd_new_gpg() {
+  local name="${1:-}" email="${2:-}"
+  [ -n "$name" ] && [ -n "$email" ] || usage
+  local fpr
+  fpr="$(signing_fingerprint_for "$email")"
+  if [ -n "$fpr" ]; then
+    echo "GPG key $fpr already signs as $email; reusing it."
+  else
+    # gpg asks for a passphrase for the new key through pinentry.
+    gpg --quick-generate-key "$name <$email>" ed25519 sign 0
+    fpr="$(signing_fingerprint_for "$email")"
+    [ -n "$fpr" ] || die "gpg made no key for $email"
+    echo "${GREEN}Made GPG key $fpr${NC}"
+  fi
+  if gh gpg-key list 2>/dev/null | grep -qF "${fpr: -16}"; then
+    echo "GitHub already knows $fpr."
+    return
+  fi
+  if gh_scope write:gpg_key && gpg --armor --export "$fpr" | gh gpg-key add -; then
+    echo "${GREEN}Added $fpr to GitHub.${NC}"
+  else
+    echo "${YELLOW}Could not add it to GitHub.${NC} By hand:  gpg --armor --export $fpr | gh gpg-key add -" >&2
+  fi
+}
+
 case "${1:-}" in
   export) shift; cmd_export "$@" ;;
   import) shift; cmd_import "$@" ;;
   doctor) shift; cmd_doctor "$@" ;;
+  new-ssh) shift; cmd_new_ssh "$@" ;;
+  new-gpg) shift; cmd_new_gpg "$@" ;;
   *) usage ;;
 esac
