@@ -24,6 +24,9 @@ if [ -z "$GEN_NUM" ]; then
 fi
 
 echo "${YELLOW}Rolling back ${HOST} to generation ${GEN_NUM}...${NC}"
-/run/current-system/sw/bin/darwin-rebuild switch --flake ".#${HOST}" --switch-generation "$GEN_NUM"
+# --switch-generation moves the profile and activates what it points at, with
+# no evaluation, so it needs no --flake. It does need root: darwin-rebuild
+# refuses to activate without it.
+sudo /run/current-system/sw/bin/darwin-rebuild --switch-generation "$GEN_NUM"
 
 echo "${GREEN}Rollback to generation $GEN_NUM complete!${NC}"
