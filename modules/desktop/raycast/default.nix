@@ -41,6 +41,12 @@ let
   names = lib.filter
     (name: lib.hasSuffix ".sh" name && !(lib.hasInfix ".template." name))
     (lib.attrNames (builtins.readDir scriptDir));
+
+  # Every script command here is an ultra-wide layout built out of
+  # `betterdisplaycli`, so they come with betterdisplay rather than with
+  # Raycast. Raycast on its own is still the launcher, the hotkey and the
+  # login agent (#5): what a fork wants, without one monitor's scripts.
+  withScripts = config.mine.desktop.betterdisplay.enable;
 in
 {
   config = lib.mkIf config.mine.desktop.raycast.enable {
@@ -85,27 +91,11 @@ in
       };
     };
 
-    # The ultra-wide script commands are 17 calls to `betterdisplaycli` and
-    # nothing else would drive the PiP layout they set up, so raycast without
-    # betterdisplay is a half-configured machine rather than a smaller one.
-    # betterdisplay is what pulls the cask that `betterdisplaycli` wraps.
-    assertions = [
-      {
-        assertion = config.mine.desktop.betterdisplay.enable;
-        message = ''
-          mine.desktop.raycast.enable needs mine.desktop.betterdisplay.enable:
-          the ultra-wide script commands drive `betterdisplaycli`, which wraps
-          an app bundle that betterdisplay is what asks for. Either enable
-          betterdisplay too, or turn raycast off.
-        '';
-      }
-    ];
-
-    home-manager.users.${user}.home.file = lib.listToAttrs (map
+    home-manager.users.${user}.home.file = lib.mkIf withScripts (lib.listToAttrs (map
       (name: lib.nameValuePair ".config/raycast/scripts/${name}" {
         executable = true;
         text = render name;
       })
-      names);
+      names));
   };
 }

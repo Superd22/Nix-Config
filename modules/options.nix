@@ -38,6 +38,33 @@
         Email address used for commit authorship.
       '';
     };
+
+    # The two below do have defaults, unlike the three above: getting them
+    # wrong breaks git in a way you notice at once, not a machine silently
+    # configured as someone else. The defaults are the ones that work for a
+    # person with no keys yet (#5).
+    githubKey = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "id_ed25519";
+      description = ''
+        File name under `~/.ssh` of the key GitHub knows you by. When set,
+        github.com is pinned to it with `IdentitiesOnly`, which is what makes
+        a private `git+ssh://` flake input fetch with the right key when the
+        agent holds several. `null` leaves github.com to ssh's defaults, which
+        suits someone who uses git over https through `gh`.
+      '';
+    };
+
+    signCommits = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether git signs every commit with GPG (`commit.gpgsign`). gpg picks
+        the secret key whose uid matches `email`, so turning this on without
+        such a key makes every commit fail. `keys doctor` checks for it.
+      '';
+    };
   };
 
   # Opt-in units (#3). Everything under here is a `mkEnableOption`, so it
@@ -62,8 +89,9 @@
 
     betterdisplay.enable = lib.mkEnableOption ''
       BetterDisplay: installs the cask and `betterdisplaycli`, a wrapper round
-      the CLI that the cask hides inside its .app bundle. Required by
-      `raycast.enable` below
+      the CLI that the cask hides inside its .app bundle. With `raycast.enable`
+      below, also brings Raycast's ultra-wide script commands, which are
+      `betterdisplaycli` calls
     '';
 
     dock.enable = lib.mkEnableOption ''
@@ -74,12 +102,12 @@
     '';
 
     raycast.enable = lib.mkEnableOption ''
-      Raycast: installs the cask and the script commands from
-      modules/config/raycast, rendered into ~/.config/raycast/scripts. Raycast
-      still has to be pointed at that directory by hand, once — see that
-      directory's readme. Requires `betterdisplay.enable` above; the ultra-wide
-      scripts are mostly `betterdisplaycli` calls, and there is an assertion
-      that says so
+      Raycast: installs the cask, sets its hotkey to Control-D and starts it
+      at login. With `betterdisplay.enable` above, also renders the script
+      commands from modules/config/raycast into ~/.config/raycast/scripts;
+      they drive `betterdisplaycli` and mean nothing without it. Raycast still
+      has to be pointed at that directory by hand, once — see that directory's
+      readme
     '';
   };
 

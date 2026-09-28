@@ -15,6 +15,10 @@
     name = "david";
     fullName = "David";
     email = "superd001@gmail.com";
+    # The key the `secrets` input is fetched with, and the GPG key
+    # AC749D75D32270E7; both travel in the `keys export` bundle.
+    githubKey = "id_rsa";
+    signCommits = true;
   };
 
   # Every flag below is spelled out even where it looks obvious. `mkEnableOption`

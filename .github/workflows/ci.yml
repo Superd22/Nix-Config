@@ -82,6 +82,10 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
+        with:
+          # init clones INIT_UPSTREAM, which below is this checkout, so the
+          # code under review is what the wizard reads (not main's).
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
 
       - name: nix build .#build .#build-switch .#rollback .#keys .#init
@@ -107,13 +111,73 @@ jobs:
           # PATH is spliced inside the devShell so the stubs land in front of
           # its gum, not in front of a PATH that does not have gum yet.
           INIT_YES=1 INIT_SKIP_BUILD=1 INIT_HOSTNAME=CI-Copy INIT_BUNDLE="$RUNNER_TEMP/fake-bundle.age" \
-            INIT_DEST="$RUNNER_TEMP/cfg" \
+            INIT_DEST="$RUNNER_TEMP/cfg" INIT_UPSTREAM="$GITHUB_WORKSPACE" \
             nix develop --command sh -c 'PATH="$1:$PATH" exec bash -euo pipefail apps/init.sh' _ "$stubs" \
             | tee init.log
           grep -q "stub keys import .*fake-bundle.age" init.log
           grep -q "stub keys doctor" init.log
           test -f "$RUNNER_TEMP/cfg/hosts/CI-Copy/default.nix"
           git -C "$RUNNER_TEMP/cfg" log -1 --format=%s | grep -q "hosts: add CI-Copy"
+
+      # The "I'm someone else" path (#5), twice. Both write hosts/<name> from
+      # hosts/example out of INIT_* answers and stop before build-switch.
+      #
+      # Without WeMaintain, the generated host is then evaluated with the same
+      # no-private-access ssh as eval-example: a fork that says no must never
+      # fetch `wm` or `secrets`.
+      #
+      # With WeMaintain, wm's bootstrap is a stub (curl hands init a script
+      # that echoes), and the host is generated but not evaluated: that would
+      # need a read token for wemaintain/devenv, which this repo does not have.
+      - name: run init's someone-else path, not at WeMaintain, and evaluate the host
+        env:
+          GIT_SSH_COMMAND: >-
+            ssh -o IdentityAgent=none -o IdentityFile=/dev/null
+            -o IdentitiesOnly=yes -o BatchMode=yes
+        run: |
+          stubs="$(mktemp -d)"
+          printf '#!/bin/sh\necho "stub keys $*"\n' > "$stubs/keys"
+          printf '#!/bin/sh\necho "stub build-switch $*"; exit 1\n' > "$stubs/build-switch"
+          printf '#!/bin/sh\necho CI-Other\n' > "$stubs/hostname"
+          chmod +x "$stubs"/*
+          INIT_WHO=other INIT_YES=1 INIT_SKIP_BUILD=1 INIT_WORK=0 INIT_HOSTNAME=CI-Other \
+            INIT_FULLNAME="Ada Lovelace" INIT_EMAIL=ada@example.com \
+            INIT_DEST="$RUNNER_TEMP/other" INIT_UPSTREAM="$GITHUB_WORKSPACE" \
+            nix develop --command sh -c 'PATH="$1:$PATH" exec bash -euo pipefail apps/init.sh' _ "$stubs" \
+            | tee other.log
+          grep -q "stub keys doctor" other.log
+          # No key made when none is asked for (`! grep` would not fail under -e).
+          if grep -q "stub keys new-" other.log; then exit 1; fi
+          f="$RUNNER_TEMP/other/hosts/CI-Other/default.nix"
+          grep -q 'mine.work.wemaintain.enable = false;' "$f"
+          grep -q 'githubKey = null;' "$f"
+          git -C "$RUNNER_TEMP/other" log -1 --format=%s | grep -q "hosts: CI-Other, from init"
+          nix eval --raw "$RUNNER_TEMP/other#darwinConfigurations.CI-Other.system.drvPath"
+          echo
+
+      - name: run init's someone-else path at WeMaintain (generate only)
+        run: |
+          stubs="$(mktemp -d)"
+          printf '#!/bin/sh\necho "stub keys $*"\n' > "$stubs/keys"
+          printf '#!/bin/sh\necho "stub build-switch $*"; exit 1\n' > "$stubs/build-switch"
+          printf '#!/bin/sh\necho CI-Work\n' > "$stubs/hostname"
+          # `curl ... | sh -s -- --nix-config`: the "script" just says it ran.
+          printf '#!/bin/sh\necho %s\n' "'echo stub wm-bootstrap \"\$@\"'" > "$stubs/curl"
+          chmod +x "$stubs"/*
+          INIT_WHO=other INIT_YES=1 INIT_SKIP_BUILD=1 INIT_WORK=1 INIT_HOSTNAME=CI-Work \
+            INIT_FULLNAME="A Colleague" INIT_EMAIL=colleague@example.com \
+            INIT_GITHUB_KEY=id_ed25519 INIT_SIGN=1 \
+            INIT_DEST="$RUNNER_TEMP/work" INIT_UPSTREAM="$GITHUB_WORKSPACE" \
+            nix develop --command sh -c 'PATH="$1:$PATH" exec bash -euo pipefail apps/init.sh' _ "$stubs" \
+            | tee work.log
+          grep -q "stub wm-bootstrap --nix-config" work.log
+          grep -q "stub keys new-ssh id_ed25519 colleague@example.com" work.log
+          grep -q "stub keys new-gpg A Colleague colleague@example.com" work.log
+          f="$RUNNER_TEMP/work/hosts/CI-Work/default.nix"
+          grep -q 'mine.work.wemaintain.enable = true;' "$f"
+          grep -q 'datagrip.enable = true;' "$f"
+          grep -q 'githubKey = "id_ed25519";' "$f"
+          grep -q 'signCommits = true;' "$f"
 
   # The expensive check: an actual build of the example host, which catches what
   # evaluation cannot — a package that no longer builds, a cask that vanished.

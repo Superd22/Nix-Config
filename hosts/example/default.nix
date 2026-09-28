@@ -10,7 +10,7 @@
 # `nix flake show`, `nix flake check` and CI all need it to — while being
 # visibly wrong to anyone who actually tries to build it.
 #
-# It is not derived from hosts/David-M3-Pro and diverges from it deliberately:
+# It is not a copy of David's hosts and diverges from them deliberately:
 # the flags below are what a generic fork should get, and the Homebrew lists
 # (#9) are a short seed rather than one person's applications.
 { ... }:
@@ -20,6 +20,11 @@
     name = "changeme";
     fullName = "Change Me";
     email = "you@example.com";
+    # Both left at their defaults: github.com is not pinned to a key (git over
+    # https through gh works without one), and commits are not signed. The
+    # init wizard (#5) asks about both. David's hosts set "id_rsa" and true.
+    # githubKey = "id_ed25519";
+    # signCommits = true;
   };
 
   # A plain machine. The flags default to `false`, so this block only has to
@@ -42,18 +47,30 @@
     # surprise.
     dock.enable = false;
 
-    # Off. The scripts here are for one specific ultra-wide monitor, and wiring
-    # them up needs a manual step in Raycast's settings anyway. It would also
-    # fail the assertion in modules/desktop/raycast with betterdisplay off,
-    # which is the point of that assertion.
-    raycast.enable = false;
+    # On: the launcher, its Control-D hotkey and a login agent to start it.
+    # The ultra-wide script commands are not included; they come only with
+    # betterdisplay above, which is off.
+    raycast.enable = true;
   };
 
-  # Homebrew (#9). This is the seed a fork copies and edits, so it is a short
-  # generic list rather than a copy of hosts/David-M3-Pro — Steam, NordVPN and
-  # Autodesk Fusion are exactly the sort of thing that should not arrive with a
-  # config someone else wrote. Add what you actually use; `brew search` takes
-  # the same names.
+  # Programs. Both off here, spelled out so this file reads like a real host
+  # and like what the init wizard writes.
+  mine.programs = {
+    # Off. Points ~/.claude into this repo's modules/config/claude, so the
+    # settings and skills are David's until changed; see docs/two-paths.md.
+    # The wizard explains that before asking.
+    claude-code.enable = false;
+
+    # Off. It is at its most useful with the WeMaintain module's datasources,
+    # and the wizard preselects it for colleagues.
+    datagrip.enable = false;
+  };
+
+  # Homebrew (#9). This is the seed a fork copies and edits, and what the init
+  # wizard preselects: the development half of hosts/David-M4-Max, without
+  # Steam, NordVPN, Autodesk Fusion and the rest that should not arrive with
+  # a config someone else wrote. The wizard offers those unselected. Add what
+  # you actually use; `brew search` takes the same names.
   #
   # Casks a module cannot work without are not listed here and never need to be:
   # `mine.desktop.betterdisplay.enable` pulls the betterdisplay cask itself, and
@@ -66,8 +83,12 @@
 
     # Casks: GUI applications, which macOS mostly does not have in nixpkgs.
     casks = [
+      "docker-desktop"
       "visual-studio-code"
-      "vlc"
+      "warp"
+      "google-chrome"
+      "claude-code@latest"
+      "claude"
     ];
   };
 
