@@ -98,7 +98,7 @@
       "zed"
       "openlens"
       "warp"
-      "claude-code"
+      "claude-code@latest"
       "claude"
       # Communication
       "discord"

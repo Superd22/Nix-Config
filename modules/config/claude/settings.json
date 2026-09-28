@@ -32,7 +32,7 @@
       "Bash(python3 -)"
     ]
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "enabledPlugins": {
     "chrome-devtools-mcp@claude-plugins-official": true,
     "datadog@claude-plugins-official": true,
@@ -71,6 +71,11 @@
     }
   },
   "effortLevel": "medium",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "medium"
+    }
+  },
   "switchModelsOnFlag": false,
   "agentPushNotifEnabled": true
 }
