@@ -247,22 +247,6 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
-      "locked": {
-        "lastModified": 1788608636,
-        "narHash": "sha256-RqeFOwW329f4i1f5QlJgQYwgEZvxIHJsUYlzIBxsKsY=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "0af3d1402dec3fc7e93635e511d1f7428c89cebf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "0af3d1402dec3fc7e93635e511d1f7428c89cebf",
-        "type": "github"
-      }
-    },
     "openfgaTap": {
       "flake": false,
       "locked": {
@@ -329,14 +313,16 @@
     },
     "wm": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4"
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1789216768,
-        "narHash": "sha256-kxqQO67ScADbsNBTI3t9XNJDo7Sme1T52NumZOXcNWc=",
+        "lastModified": 1790593401,
+        "narHash": "sha256-ucebXvfhEaARdNv8mhaQLtz41TZzL3u5/LwpEmfd2NI=",
         "ref": "refs/heads/main",
-        "rev": "6791fc06e0caeb219826a34804b1f06ab96ad061",
-        "revCount": 42,
+        "rev": "78f2dd1db3f7c46e465f1a5cb7c26173367a7865",
+        "revCount": 43,
         "type": "git",
         "url": "https://github.com/wemaintain/devenv"
       },

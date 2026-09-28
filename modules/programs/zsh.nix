@@ -89,8 +89,8 @@
         [[ -f "$file" ]] && export "''${file##*/}=$(<"$file")"
       done
 
-      # The withPg / withPgProd RDS helpers that used to be here are generated
-      # from mine.work.wemaintain.databases by modules/work/wemaintain (#8).
+      # The withPg / withPgProd RDS helpers that used to be here are commands
+      # now, installed by modules/work/wemaintain from wm (#8, #43).
     '')
 
     # Line editing. `defaultKeymap = "viins"` above emits `bindkey -v` at order

@@ -11,7 +11,7 @@ Everything here runs on macOS (aarch64-darwin). There is no `shared` /
 │                          # dock, sketchybar
 ├── services/              # Nix-darwin services (screen-lock-monitor)
 ├── work/                  # Employer-specific units, one directory each, off by
-│                          # default: wemaintain/ (AWS SSO, RDS helpers, gcloud)
+│                          # default: wemaintain/ (AWS SSO, RDS helpers, VPN)
 ├── nixpkgs.nix            # nixpkgs config; defines how we import overlays
 ├── secrets.nix            # agenix secrets
 ├── home-manager.nix       # The nix-darwin module wiring up home-manager

@@ -175,15 +175,14 @@
 
   # Work (#8). The one "profile" this repo has, built concretely: a team
   # standardising its dev environment is the case where everyone should get
-  # the improvements. The schema (profiles, databases, gcloud project) lives in
+  # the improvements. The schema (profiles, databases, the VPN) lives in
   # modules/work/wemaintain, where it is used; only the flag is here.
   options.mine.work = {
     wemaintain.enable = lib.mkEnableOption ''
       WeMaintain's cloud environments: `~/.aws/config` with the SSO profiles,
       the RDS CA bundle, the `withPg`/`withPgProd` IAM-auth helpers, the
-      matching DataGrip datasources, gcloud pointed at the data project, and
-      `wm-login` for the browser logins nix cannot do. Requires
-      `mine.work.wemaintain.email`
+      matching DataGrip datasources, the Pritunl VPN, and `wm-login` for the
+      browser logins nix cannot do
     '';
   };
 

@@ -78,8 +78,8 @@
 
   # `mine.work.wemaintain.enable` is left at its default (false). It is the
   # one employer-specific unit in the repo (#8): SSO profiles, RDS helpers,
-  # gcloud. A fork that does not work there has no use for any of it, and a
-  # colleague who does turns it on with one line plus their work email.
+  # the VPN. A fork that does not work there has no use for any of it, and a
+  # colleague who does turns it on with one line.
 
   # `mine.secrets.enable` is deliberately left at its default (false): this host
   # must evaluate with no access to the private secrets repo (#17).
