@@ -241,6 +241,23 @@ check_private_key() {
 
 check_github() {
   local key="$1"
+  # A key with a passphrase is invisible to BatchMode ssh unless the agent
+  # already holds it: ssh cannot ask, skips the key, and GitHub answers
+  # "Permission denied (publickey)" although it knows the key. Load it into
+  # the agent here, asking once; macOS's own ssh-add also stores the
+  # passphrase in the keychain, which AddKeysToAgent in ssh.nix picks up later.
+  if ! ssh-keygen -y -P "" -f "$key" >/dev/null 2>&1; then
+    local material
+    material="$(awk '{ print $2 }' "$key.pub" 2>/dev/null)"
+    if ! { [ -n "$material" ] && ssh-add -L 2>/dev/null | grep -qF "$material"; }; then
+      echo "        $(basename "$key") has a passphrase; adding it to the ssh agent so ssh can use it."
+      if [ -x /usr/bin/ssh-add ]; then
+        /usr/bin/ssh-add --apple-use-keychain "$key" || true
+      else
+        ssh-add "$key" || true
+      fi
+    fi
+  fi
   # -i and IdentitiesOnly rather than relying on ~/.ssh/config: on a fresh Mac
   # home-manager has not written that file yet.
   local reply
